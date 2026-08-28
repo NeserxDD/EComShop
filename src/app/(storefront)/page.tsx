@@ -7,53 +7,53 @@ import Link from "next/link";
 export default function Home() {
   return (
     <div className="flex flex-col flex-1">
-      {/* Hero — simple, Tailwind free tier, no extra dependency */}
-      <section className="border-b bg-zinc-50 dark:bg-zinc-900">
+      {/* Warm mesh hero — one signature gradient, not halftone, anthropics thesis */}
+      <section className="warm-mesh border-b border-border">
         <div className="mx-auto max-w-6xl px-6 py-16 sm:py-24">
-          <p className="text-xs font-mono uppercase tracking-widest text-zinc-500">
-            EComShop • Vercel Free • Supabase Free • Cloudinary Free
+          <p className="text-[11px] font-mono uppercase tracking-[0.14em] text-muted-foreground">
+            — 01 — EComShop · WARM STONE · $0 STACK
           </p>
-          <h1 className="mt-3 max-w-2xl text-4xl font-bold tracking-tight sm:text-5xl">
-            Computer Store <span className="text-zinc-400">&</span> Repair — $0 Stack
+          <h1
+            className="mt-3 max-w-2xl text-4xl font-bold tracking-tight sm:text-5xl"
+            style={{ fontFamily: "var(--font-inter)" }}
+          >
+            Computer store <span className="text-muted-foreground font-light">&</span> repair
+            <span className="block text-2xl sm:text-3xl font-normal text-muted-foreground mt-1">Warm minimal, not plain</span>
           </h1>
-          <p className="mt-4 max-w-xl text-lg text-zinc-600 dark:text-zinc-400">
-            Browse laptops, components & peripherals. Request a repair and track it by ticket.
-            Next.js 15 + Prisma + Supabase (500MB) + Better Auth + Cloudinary (25GB).
+          <p className="mt-4 max-w-xl text-[15px] leading-7 text-muted-foreground">
+            Browse laptops, components & peripherals. Request a repair and track it by ticket — 8 tops → 15 leaves → 3/leaf warm on eyes.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
               href="/products"
-              className="rounded-full bg-black px-6 py-3 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-white dark:text-black"
+              className="rounded-xl bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm"
             >
               Browse Products
             </Link>
             <Link
               href="/repairs/new"
-              className="rounded-full border px-6 py-3 text-sm font-medium hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-900"
+              className="rounded-xl border border-border bg-card px-6 py-3 text-sm font-medium hover:bg-muted transition-colors shadow-sm"
             >
               Request Repair →
             </Link>
             <Link
               href="/repairs/track"
-              className="rounded-full border px-6 py-3 text-sm font-medium hover:bg-zinc-50 dark:border-zinc-800"
+              className="rounded-xl border border-border bg-card px-6 py-3 text-sm font-medium hover:bg-muted transition-colors"
             >
               Track Ticket
             </Link>
           </div>
-          <p className="mt-4 text-xs text-zinc-500">
-            Phase 0 scaffold — commerce & repair logic wired in Phases 2-3. See{" "}
-            <Link href="/admin" className="underline">
-              /admin
-            </Link>{" "}
-            for staff dashboard stub.
+          <p className="mt-4 text-xs font-mono uppercase tracking-wide text-muted-foreground">
+            Stone 50 #fafaf9 · Amber 600 · <Link href="/admin" className="underline">/admin</Link> for staff
           </p>
         </div>
       </section>
 
-      {/* Category preview — static now, will be Prisma-driven in Phase 2 */}
+      {/* Category preview — warm cards with shadcn radii + warm shadow */}
       <section className="mx-auto max-w-6xl w-full px-6 py-10">
-        <h2 className="text-sm font-mono uppercase tracking-widest text-zinc-500">
-          8 Top Categories → 15 Leaves → 3/leaf seed (40 products)
+        <p className="text-[11px] font-mono uppercase tracking-[0.14em] text-muted-foreground">— 02 — CATEGORIES</p>
+        <h2 className="text-lg font-semibold tracking-tight" style={{ fontFamily: "var(--font-inter)" }}>
+          8 tops → 15 leaves → 3/leaf seed
         </h2>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[
@@ -66,18 +66,20 @@ export default function Home() {
             "Accessories — Cables & Adapters",
             "Refurbished",
           ].map((c) => (
-            <div key={c} className="rounded-2xl border p-4 text-sm dark:border-zinc-800">
+            <div
+              key={c}
+              className="rounded-xl border border-border bg-card p-4 text-sm shadow-[0_4px_24px_rgba(28,25,23,0.06)] hover:shadow-[0_12px_32px_rgba(28,25,23,0.10)] hover:-translate-y-0.5 transition-all"
+            >
               {c}
             </div>
           ))}
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl w-full px-6 pb-16 text-xs leading-6 text-zinc-500">
-        <p>
-          <strong className="text-zinc-900 dark:text-zinc-100">$0 Free Tier:</strong> Supabase 500MB fits ~5k products,
-          Cloudinary 25GB fits ~25k images, Vercel 100GB BW. Seed is 40 products (~3MB DB + 30MB images).
-        </p>
+      <section className="mx-auto max-w-6xl w-full px-6 pb-16">
+        <div className="rounded-xl border border-border bg-card p-4 text-xs leading-6 text-muted-foreground shadow-sm">
+          <strong className="text-foreground font-medium">$0 Free Tier:</strong> Supabase 500MB fits ~5k products, Cloudinary 25GB fits ~25k images, Vercel 100GB BW. Seed is 45 products (~3MB DB + 30MB images).
+        </div>
       </section>
     </div>
   );

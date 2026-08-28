@@ -1,26 +1,174 @@
 @import "tailwindcss";
 
+/* W1 Stone Subtle Warm — anthropics frontend-design + shadcn + vercel guidelines
+   Minimalist modern, not plain: stone warm neutrals + single amber accent, soft shadows, generous whitespace.
+   Tokens swap via .dark class (not prefers-color-scheme alone) for user toggle, 500ms crossfade per skill. */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Stone warm ramp — light */
+  --background: #fafaf9; /* stone-50 warm white */
+  --foreground: #1c1917; /* stone-900 warm black */
+  --card: #ffffff;
+  --card-foreground: #1c1917;
+  --popover: #ffffff;
+  --popover-foreground: #1c1917;
+  --primary: #d97706; /* amber-600 warm accent — one per view */
+  --primary-foreground: #fffbeb; /* amber-50 */
+  --secondary: #f5f5f4; /* stone-100 */
+  --secondary-foreground: #44403c; /* stone-700 */
+  --muted: #f5f5f4;
+  --muted-foreground: #78716c; /* stone-500 */
+  --accent: #fef3c7; /* amber-100 subtle */
+  --accent-foreground: #92400e;
+  --destructive: #dc2626;
+  --destructive-foreground: #fef2f2;
+  --border: #e7e5e4; /* stone-200 hairline 1px per skill */
+  --input: #e7e5e4;
+  --ring: #d97706; /* focus ring = accent */
+  --radius: 0.75rem; /* 12px base — skill ladder 16/12/8/6 */
+}
+
+.dark {
+  /* Warm near-black, not pure black — softer on eyes */
+  --background: #1c1917; /* stone-900 */
+  --foreground: #fafaf9; /* stone-50 */
+  --card: #292524; /* stone-800 */
+  --card-foreground: #fafaf9;
+  --popover: #292524;
+  --popover-foreground: #fafaf9;
+  --primary: #f59e0b; /* amber-500 — dimmed 70% feel, but keep contrast */
+  --primary-foreground: #1c1917;
+  --secondary: #292524;
+  --secondary-foreground: #d6d3d1; /* stone-300 */
+  --muted: #292524;
+  --muted-foreground: #a8a29e; /* stone-400 */
+  --accent: #44403c;
+  --accent-foreground: #fde68a;
+  --destructive: #ef4444;
+  --destructive-foreground: #1c1917;
+  --border: #44403c; /* stone-700 */
+  --input: #44403c;
+  --ring: #f59e0b;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-inter);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px); /* 16px large cards */
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Base */
+* {
+  border-color: var(--border);
 }
-
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+html.dark {
+  color-scheme: dark;
+}
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  transition:
+    background-color 500ms ease,
+    color 500ms ease,
+    border-color 500ms ease;
+}
+
+/* Selection inverted per skill */
+::selection {
+  background: var(--foreground);
+  color: var(--background);
+}
+
+/* Scrollbar slim 6px */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Focus ring warm */
+*:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* Motion respect */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Warm mesh gradient utility — one accent per page, masked dissolve */
+.warm-mesh {
+  background:
+    radial-gradient(ellipse 600px 400px at 20% 10%, rgba(254, 243, 199, 0.6), transparent 60%),
+    radial-gradient(ellipse 800px 500px at 80% 30%, rgba(253, 230, 138, 0.25), transparent 65%),
+    linear-gradient(to bottom, var(--card), var(--background));
+}
+.dark .warm-mesh {
+  background:
+    radial-gradient(ellipse 600px 400px at 20% 10%, rgba(251, 146, 60, 0.12), transparent 60%),
+    radial-gradient(ellipse 800px 500px at 80% 30%, rgba(217, 119, 6, 0.08), transparent 65%),
+    linear-gradient(to bottom, var(--card), var(--background));
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  @keyframes fadeUp {
+    from {
+      opacity: 1;
+      transform: none;
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
 }

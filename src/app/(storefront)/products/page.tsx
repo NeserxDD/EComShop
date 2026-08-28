@@ -102,7 +102,7 @@ export default async function ProductsPage({
       </div>
 
       {products.length === 0 ? (
-        <div className="mt-8 rounded-2xl border p-8 text-center text-sm text-zinc-500 dark:border-zinc-800">
+        <div className="mt-8 rounded-xl border border-border bg-card p-8 text-center text-sm text-muted-foreground shadow-sm">
           <p>No products yet. Seed with `npm run seed` (45 demo products) or add via /admin/products.</p>
           <p className="mt-2 text-xs">Dummy DB? Set real Supabase DATABASE_URL in .env and rebuild.</p>
         </div>
@@ -113,16 +113,24 @@ export default async function ProductsPage({
             const img = imgs[0] || "https://res.cloudinary.com/demo/image/upload/w_600/sample";
             const price = Number((p as unknown as { price: unknown }).price ?? 0);
             return (
-              <Link key={p.id} href={`/products/${p.slug}`} className="group rounded-2xl border overflow-hidden hover:shadow-sm dark:border-zinc-800">
-                <div className="aspect-[4/3] bg-zinc-100 dark:bg-zinc-900 overflow-hidden">
+              <Link
+                key={p.id}
+                href={`/products/${p.slug}`}
+                className="group rounded-xl border border-border bg-card overflow-hidden shadow-[0_4px_24px_rgba(28,25,23,0.06)] hover:shadow-[0_12px_32px_rgba(28,25,23,0.10)] hover:-translate-y-1 transition-all animate-[fadeUp_500ms_ease-out]"
+              >
+                <div className="aspect-[4/3] bg-muted overflow-hidden">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={img} alt={p.name} className="h-full w-full object-cover group-hover:scale-[1.02] transition" />
+                  <img src={img} alt={p.name} className="h-full w-full object-cover group-hover:scale-[1.03] transition duration-500" />
                 </div>
                 <div className="p-4">
-                  <p className="text-xs text-zinc-500">{(p as unknown as { category: { name: string } }).category?.name}</p>
-                  <h3 className="font-medium leading-tight">{p.name}</h3>
-                  <p className="mt-1 text-sm font-semibold">{formatPrice(price)}</p>
-                  <p className="text-xs text-zinc-500">Stock: {p.stockQty} • SKU: {p.sku}</p>
+                  <p className="text-[11px] font-mono uppercase tracking-wide text-muted-foreground">
+                    {(p as unknown as { category: { name: string } }).category?.name}
+                  </p>
+                  <h3 className="font-medium leading-tight" style={{ fontFamily: "var(--font-inter)" }}>
+                    {p.name}
+                  </h3>
+                  <p className="mt-1 text-sm font-semibold text-primary">{formatPrice(price)}</p>
+                  <p className="text-xs font-mono uppercase tracking-wide text-muted-foreground">Stock: {p.stockQty} · {p.sku}</p>
                 </div>
               </Link>
             );

@@ -1,56 +1,69 @@
 import Link from "next/link";
 import { getSession } from "@/lib/session";
+import { ThemeToggle } from "@/components/theme-toggle";
 
-// Vibecode learning: Route Group layout (storefront).
-// - Folder name (storefront) is ignored in URL — /products still works, but shares this layout.
-// - Server Component: getSession() here → no client fetch, no waterfall per vercel-react-best-practices async-parallel.
-// - Header is same across public site, separate from (dashboard) layout.
+// Warm stone + amber — anthropics frontend-design (thesis hero) + shadcn + vercel web-guidelines
+// Header: sticky hairline (stone-200) 1px, 90% bg + backdrop-blur, micro mono labels, not plain.
 
 export default async function StorefrontLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
   const user = session?.user as { name?: string; role?: string } | undefined;
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="sticky top-0 z-10 border-b bg-white/80 backdrop-blur dark:bg-black/80 dark:border-zinc-800">
-        <div className="mx-auto max-w-6xl flex h-14 items-center justify-between px-6">
-          <Link href="/" className="font-bold tracking-tight">
-            EComShop
-          </Link>
-          <nav className="hidden gap-6 text-sm sm:flex">
-            <Link href="/products" className="hover:underline">
-              Products
+    <div className="min-h-screen flex flex-col bg-background">
+      <header className="sticky top-0 z-10 border-b border-border bg-card/80 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+        <div className="mx-auto max-w-6xl flex h-14 items-center justify-between px-6 gap-6">
+          <div className="flex items-center gap-8">
+            <Link href="/" className="flex items-center gap-2">
+              <span className="size-6 rounded-lg bg-primary text-primary-foreground grid place-items-center text-xs font-bold">E</span>
+              <span className="font-bold tracking-tight text-sm" style={{ fontFamily: "var(--font-inter)" }}>
+                EComShop
+              </span>
+              <span className="hidden sm:inline text-[10px] font-mono uppercase tracking-[0.12em] text-muted-foreground border border-border rounded-full px-2 py-0.5">
+                WARM STONE
+              </span>
             </Link>
-            <Link href="/repairs/new" className="hover:underline">
-              Repair
-            </Link>
-            <Link href="/repairs/track" className="hover:underline">
-              Track
-            </Link>
-            <Link href="/admin" className="hover:underline">
-              Admin
-            </Link>
-          </nav>
-          <div className="flex items-center gap-3 text-sm">
+            <nav className="hidden gap-1 text-sm sm:flex">
+              {[
+                { href: "/products", label: "Products" },
+                { href: "/repairs/new", label: "Repair" },
+                { href: "/repairs/track", label: "Track" },
+                { href: "/contact", label: "Contact" },
+              ].map((l) => (
+                <Link
+                  key={l.href}
+                  href={l.href}
+                  className="px-3 py-1.5 rounded-full hover:bg-muted text-sm transition-colors"
+                >
+                  {l.label}
+                </Link>
+              ))}
+              <Link href="/admin" className="px-3 py-1.5 rounded-full hover:bg-muted text-sm transition-colors">
+                Admin
+              </Link>
+            </nav>
+          </div>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
             {user ? (
               <>
-                <span className="hidden sm:inline text-zinc-500">
-                  {user.name} ({user.role})
+                <span className="hidden lg:inline text-xs font-mono uppercase tracking-wide text-muted-foreground">
+                  {user.name} · {user.role}
                 </span>
                 <Link
                   href="/api/auth/sign-out"
-                  className="rounded-full border px-3 py-1.5 text-xs hover:bg-zinc-50 dark:border-zinc-800"
+                  className="rounded-full border border-border bg-card px-3 py-1.5 text-xs hover:bg-muted transition-colors"
                 >
                   Sign out
                 </Link>
               </>
             ) : (
               <>
-                <Link href="/sign-in" className="text-sm hover:underline">
+                <Link href="/sign-in" className="hidden sm:inline text-sm hover:underline px-2">
                   Sign in
                 </Link>
                 <Link
                   href="/sign-up"
-                  className="rounded-full bg-black px-4 py-1.5 text-xs text-white dark:bg-white dark:text-black"
+                  className="rounded-full bg-primary px-4 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm"
                 >
                   Sign up
                 </Link>
@@ -60,8 +73,11 @@ export default async function StorefrontLayout({ children }: { children: React.R
         </div>
       </header>
       <main className="flex-1">{children}</main>
-      <footer className="border-t py-6 text-center text-xs text-zinc-500 dark:border-zinc-800">
-        $0 Stack — Supabase Free + Cloudinary Free + Vercel Hobby + Better Auth
+      <footer className="border-t border-border py-8">
+        <div className="mx-auto max-w-6xl px-6 flex flex-wrap justify-between gap-4 text-xs">
+          <p className="font-mono uppercase tracking-wide text-muted-foreground">© 2026 EComShop · Warm Stone Minimal</p>
+          <p className="text-muted-foreground">Supabase Free · Cloudinary 25GB · Vercel Hobby · Better Auth</p>
+        </div>
       </footer>
     </div>
   );
