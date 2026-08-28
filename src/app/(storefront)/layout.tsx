@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getSession } from "@/lib/session";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { SignOutButton } from "@/components/sign-out-button";
 
 // Warm stone + amber — anthropics frontend-design (thesis hero) + shadcn + vercel web-guidelines
 // Header: sticky hairline (stone-200) 1px, 90% bg + backdrop-blur, micro mono labels, not plain.
@@ -65,12 +66,7 @@ export default async function StorefrontLayout({ children }: { children: React.R
                 <span className="hidden lg:inline text-xs font-mono uppercase tracking-wide text-muted-foreground">
                   {user.name} · {user.role}
                 </span>
-                <Link
-                  href="/api/auth/sign-out"
-                  className="rounded-full border border-border bg-card px-3 py-1.5 text-xs hover:bg-muted transition-colors"
-                >
-                  Sign out
-                </Link>
+                <SignOutButton />
               </>
             ) : (
               <>
