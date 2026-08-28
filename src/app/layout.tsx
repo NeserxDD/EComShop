@@ -19,9 +19,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: { default: "EComShop — Computer Store & Repair", template: "%s | EComShop" },
+  title: { default: "Stone & Circuit — Computer Store & Care", template: "%s | Stone & Circuit" },
   description:
-    "Browse components, laptops & peripherals. Request computer repair and track status. $0 free-tier stack: Next.js + Supabase + Cloudinary.",
+    "Official storefront & authorized repair for laptops, components & peripherals. Genuine parts. Expert care. Manila — warranty on every fix.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

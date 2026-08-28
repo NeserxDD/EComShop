@@ -14,12 +14,12 @@ export default async function StorefrontLayout({ children }: { children: React.R
         <div className="mx-auto max-w-6xl flex h-14 items-center justify-between px-6 gap-6">
           <div className="flex items-center gap-8">
             <Link href="/" className="flex items-center gap-2">
-              <span className="size-6 rounded-lg bg-primary text-primary-foreground grid place-items-center text-xs font-bold">E</span>
+              <span className="size-6 rounded-lg bg-primary text-primary-foreground grid place-items-center text-xs font-bold">S</span>
               <span className="font-bold tracking-tight text-sm" style={{ fontFamily: "var(--font-inter)" }}>
-                EComShop
+                Stone & Circuit
               </span>
               <span className="hidden sm:inline text-[10px] font-mono uppercase tracking-[0.12em] text-muted-foreground border border-border rounded-full px-2 py-0.5">
-                WARM STONE
+                EST. 2026
               </span>
             </Link>
             <nav className="hidden gap-1 text-sm sm:flex">
@@ -75,8 +75,17 @@ export default async function StorefrontLayout({ children }: { children: React.R
       <main className="flex-1">{children}</main>
       <footer className="border-t border-border py-8">
         <div className="mx-auto max-w-6xl px-6 flex flex-wrap justify-between gap-4 text-xs">
-          <p className="font-mono uppercase tracking-wide text-muted-foreground">© 2026 EComShop · Warm Stone Minimal</p>
-          <p className="text-muted-foreground">Supabase Free · Cloudinary 25GB · Vercel Hobby · Better Auth</p>
+          <p className="font-mono uppercase tracking-wide text-muted-foreground">© 2026 Stone & Circuit · Manila · Mon–Sat 9am–6pm</p>
+          <p className="text-muted-foreground">
+            <Link href="/contact" className="hover:underline">
+              Contact
+            </Link>{" "}
+            ·{" "}
+            <Link href="/products" className="hover:underline">
+              Shipping
+            </Link>{" "}
+            · Warranty · Repair Policy
+          </p>
         </div>
       </footer>
     </div>

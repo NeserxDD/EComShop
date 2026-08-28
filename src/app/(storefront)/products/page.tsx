@@ -102,9 +102,20 @@ export default async function ProductsPage({
       </div>
 
       {products.length === 0 ? (
-        <div className="mt-8 rounded-xl border border-border bg-card p-8 text-center text-sm text-muted-foreground shadow-sm">
-          <p>No products yet. Seed with `npm run seed` (45 demo products) or add via /admin/products.</p>
-          <p className="mt-2 text-xs">Dummy DB? Set real Supabase DATABASE_URL in .env and rebuild.</p>
+        <div className="mt-8 rounded-xl border border-border bg-card p-8 text-center shadow-sm">
+          <h3 className="font-medium" style={{ fontFamily: "var(--font-inter)" }}>
+            No products found
+          </h3>
+          <p className="mt-1 text-sm text-muted-foreground">Try a different search or explore our bestsellers.</p>
+          <Link
+            href="/products"
+            className="mt-4 inline-block rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            Browse all products
+          </Link>
+          <p className="mt-3 text-xs text-muted-foreground">
+            Looking for something specific? <Link href="/contact" className="underline">Contact us</Link> for special orders.
+          </p>
         </div>
       ) : (
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
