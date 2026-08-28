@@ -25,21 +25,40 @@ export default async function ProductsPage({
   let categories: any[] = [];
   let subcategories: any[] = [];
 
+  let topActiveSlug: string | null = null;
+  let activeName: string | null = null;
   try {
     const where: Record<string, unknown> = { isActive: true };
     if (cat) {
-      const c = await db.category.findFirst({ where: { slug: cat }, select: { id: true } });
+      const c = await db.category.findFirst({ where: { slug: cat }, select: { id: true, parentId: true, slug: true, name: true } });
       if (c) {
-        // Include children when cat is a parent (e.g., laptops → Gaming/Business)
-        const children = await db.category.findMany({ where: { parentId: c.id }, select: { id: true } });
-        const ids = [c.id, ...children.map((x: any) => x.id)];
-        (where as any).categoryId = { in: ids };
-        if (children.length > 0) {
+        activeName = (c as any).name;
+        if ((c as any).parentId) {
+          // Leaf (e.g., components-cpu) → show siblings, keep parent top active, filter only leaf
+          const parent = await db.category.findFirst({ where: { id: (c as any).parentId }, select: { slug: true } });
+          topActiveSlug = parent?.slug || null;
           subcategories = await db.category.findMany({
-            where: { parentId: c.id },
+            where: { parentId: (c as any).parentId },
             select: { id: true, name: true, slug: true },
             orderBy: { name: "asc" },
           });
+          (where as any).categoryId = c.id; // leaf → only its 3 products
+        } else {
+          // Top (e.g., components) → IN [parent + children], subchips are children
+          const children = await db.category.findMany({ where: { parentId: c.id }, select: { id: true } });
+          if (children.length > 0) {
+            const ids = [c.id, ...children.map((x: any) => x.id)];
+            (where as any).categoryId = { in: ids };
+            subcategories = await db.category.findMany({
+              where: { parentId: c.id },
+              select: { id: true, name: true, slug: true },
+              orderBy: { name: "asc" },
+            });
+            topActiveSlug = c.slug;
+          } else {
+            // Top-leaf like monitors (no children) → single
+            (where as any).categoryId = c.id;
+          }
         }
       }
     }
@@ -77,9 +96,11 @@ export default async function ProductsPage({
     <div className="mx-auto max-w-6xl px-6 py-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Products</h1>
-          <p className="text-sm text-zinc-500">
-            {total} found {q ? `for "${q}"` : ""} {cat ? `in ${cat}` : ""} — page {pageNum}/{totalPages}
+          <h1 className="text-2xl font-bold" style={{ fontFamily: "var(--font-inter)" }}>
+            Products
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {total} found {q ? `for "${q}"` : ""} {activeName ? `in ${activeName}` : cat ? `in ${cat}` : ""} — page {pageNum}/{totalPages}
           </p>
         </div>
         <form className="flex gap-2">
@@ -107,7 +128,7 @@ export default async function ProductsPage({
           <Link
             key={c.id}
             href={`/products?cat=${c.slug}${q ? `&q=${q}` : ""}`}
-            className={`rounded-full border px-3 py-1 text-xs ${cat === c.slug ? "bg-primary text-primary-foreground" : "border-border hover:bg-muted"}`}
+            className={`rounded-full border px-3 py-1 text-xs ${cat === c.slug || topActiveSlug === c.slug ? "bg-primary text-primary-foreground" : "border-border hover:bg-muted"}`}
           >
             {c.name}
           </Link>
@@ -120,7 +141,7 @@ export default async function ProductsPage({
             <Link
               key={s.id}
               href={`/products?cat=${s.slug}${q ? `&q=${q}` : ""}`}
-              className="rounded-full border border-border bg-card px-3 py-1 text-xs hover:bg-muted"
+              className={`rounded-full border px-3 py-1 text-xs ${cat === s.slug ? "bg-primary text-primary-foreground" : "border-border bg-card hover:bg-muted"}`}
             >
               {s.name}
             </Link>
