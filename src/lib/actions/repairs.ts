@@ -80,21 +80,42 @@ export async function updateRepairStatus(formData: FormData) {
   const note = String(formData.get("note") || "") || null;
   const finalCostRaw = formData.get("finalCost");
   const finalCost = finalCostRaw ? parseFloat(String(finalCostRaw)) : undefined;
+  const assignedToId = String(formData.get("assignedToId") || "") || null;
+  const partsRaw = String(formData.get("partsUsed") || "") || null;
+  let partsUsed: unknown = undefined;
+  if (partsRaw) {
+    try {
+      partsUsed = JSON.parse(partsRaw);
+    } catch {
+      partsUsed = partsRaw ? [partsRaw] : undefined;
+    }
+  }
 
   const job = await db.repairJob.findUnique({ where: { id }, select: { status: true } });
   if (!job) throw new Error("Repair not found");
 
-  const allowed = transitions[job.status] || [];
-  if (!allowed.includes(toStatus)) throw new Error(`Invalid transition ${job.status} → ${toStatus}. Allowed: ${allowed.join(", ") || "none"}`);
+  // Allow updating assign/parts without status change; if status same, skip transition check
+  const isStatusChange = toStatus && toStatus !== job.status;
+  if (isStatusChange) {
+    const allowed = transitions[job.status] || [];
+    if (!allowed.includes(toStatus)) throw new Error(`Invalid transition ${job.status} → ${toStatus}. Allowed: ${allowed.join(", ") || "none"}`);
+  }
 
   await db.$transaction(async (tx) => {
     await tx.repairJob.update({
       where: { id },
-      data: { status: toStatus as any, ...(finalCost !== undefined ? { finalCost } : {}) },
+      data: {
+        ...(isStatusChange ? { status: toStatus as any } : {}),
+        ...(finalCost !== undefined ? { finalCost } : {}),
+        ...(assignedToId !== null ? { assignedToId: assignedToId || null } : {}),
+        ...(partsUsed !== undefined ? { partsUsed: partsUsed as any } : {}),
+      },
     });
-    await tx.repairStatusHistory.create({
-      data: { repairJobId: id, fromStatus: job.status as any, toStatus: toStatus as any, changedById: userId || undefined, note },
-    });
+    if (isStatusChange) {
+      await tx.repairStatusHistory.create({
+        data: { repairJobId: id, fromStatus: job.status as any, toStatus: toStatus as any, changedById: userId || undefined, note },
+      });
+    }
   });
 
   // Non-blocking email would go here via Resend + after() per vercel-react-best-practices server-after-nonblocking

@@ -26,6 +26,7 @@ export async function createProduct(formData: FormData) {
   const categoryId = String(formData.get("categoryId") || "");
   const description = String(formData.get("description") || "");
   const imagesRaw = String(formData.get("images") || "[]"); // JSON array string or single URL
+  const imageFile = formData.get("imageFile") as File | null;
 
   if (!name || !sku || !categoryId) throw new Error("Missing fields");
 
@@ -35,6 +36,23 @@ export async function createProduct(formData: FormData) {
     images = Array.isArray(parsed) ? parsed : [imagesRaw].filter(Boolean);
   } catch {
     images = imagesRaw ? [imagesRaw] : [];
+  }
+
+  // Cloudinary upload for warm stone portfolio — if file provided, upload and prepend URL
+  if (imageFile && imageFile.size > 0) {
+    try {
+      const { cloudinary } = await import("@/lib/cloudinary");
+      const bytes = await imageFile.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+      const base64 = `data:${imageFile.type};base64,${buffer.toString("base64")}`;
+      const uploaded: any = await cloudinary.uploader.upload(base64, {
+        folder: "stone-and-circuit/products",
+        resource_type: "image",
+      });
+      if (uploaded?.secure_url) images.unshift(uploaded.secure_url);
+    } catch (e) {
+      console.error("Cloudinary upload failed, using URL fallback", e);
+    }
   }
 
   const slug = `${slugify(name)}-${Date.now().toString(36).slice(-4)}`;

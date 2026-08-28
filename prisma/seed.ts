@@ -1,6 +1,8 @@
 import { PrismaClient } from "../src/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { hashPassword } from "@better-auth/utils/password";
 import "dotenv/config";
+import { randomUUID } from "crypto";
 
 const connectionString = process.env.DATABASE_URL!;
 if (!connectionString) throw new Error("DATABASE_URL missing — set Supabase pooled URL in .env");
@@ -11,14 +13,13 @@ function slug(s: string) {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
 
-// Vibecode learning: Seed keeps $0 free tier lean.
-// - 8 tops, 15 leaves, 3 per leaf = ~45 products. Each ~2KB row = ~90KB + indexes = ~3MB.
-// - Images are Cloudinary URLs (not blobs) — 45×3 thumbs ≈ 30MB on Cloudinary, 0MB on Supabase.
+// Seed keeps $0 free tier lean: 8 tops → 15 leaves → 3/leaf = ~45 products (~3MB)
+// DEMO users for portfolio: admin/staff/customer with known password Yuyuneserx@1
 
 async function main() {
-  console.log("🌱 Seeding 8 tops → 15 leaves → 3/leaf (45 products)...");
+  console.log("🌱 Seeding 8 tops → 15 leaves → 3/leaf (45 products) + demo users...");
 
-  // Clear in dependency order
+  // Clear in FK order (children first)
   await db.repairStatusHistory.deleteMany();
   await db.repairJob.deleteMany();
   await db.inventoryLog.deleteMany();
@@ -26,6 +27,11 @@ async function main() {
   await db.order.deleteMany();
   await db.product.deleteMany();
   await db.category.deleteMany();
+  // Auth tables: Session/Account depend on User, Verification independent
+  await db.session.deleteMany();
+  await db.account.deleteMany();
+  await db.verification.deleteMany();
+  await db.user.deleteMany();
 
   const tops = [
     { name: "Laptops", slug: "laptops", children: ["Gaming Laptops", "Business Laptops"] },
@@ -38,7 +44,7 @@ async function main() {
     { name: "Refurbished", slug: "refurbished", children: [] },
   ];
 
-  const leafMap = new Map<string, string>(); // leaf name → categoryId
+  const leafMap = new Map<string, string>();
 
   for (const top of tops) {
     const topCat = await db.category.create({
@@ -58,8 +64,6 @@ async function main() {
 
   console.log(`✅ Categories: ${leafMap.size} leaves, ${tops.length} tops`);
 
-  // Sample products: 3 per leaf with realistic pricing, SKU, images (placeholder Cloudinary demo URLs)
-  // In prod replace with your Cloudinary upload URLs.
   const samples: Record<string, { prefix: string; price: number }[]> = {
     "Gaming Laptops": [{ prefix: "ASUS ROG Strix G15", price: 65000 }, { prefix: "Lenovo Legion 5", price: 58000 }, { prefix: "Acer Nitro 5", price: 42000 }],
     "Business Laptops": [{ prefix: "ThinkPad X1 Carbon", price: 72000 }, { prefix: "Dell XPS 13", price: 68000 }, { prefix: "HP EliteBook 840", price: 55000 }],
@@ -78,7 +82,7 @@ async function main() {
     Router: [{ prefix: "TP-Link Archer AX73", price: 4500 }, { prefix: "ASUS RT-AX86U", price: 8500 }, { prefix: "MikroTik hAP ax3", price: 5500 }],
     Switch: [{ prefix: "TP-Link 8-Port Gigabit", price: 1200 }, { prefix: "Ubiquiti USW-Lite-8-PoE", price: 6500 }, { prefix: "Netgear GS108", price: 1500 }],
     Accessories: [{ prefix: "UGreen HDMI 2.0 2m", price: 350 }, { prefix: "Baseus USB-C Hub", price: 1200 }, { prefix: "Cable Management Kit", price: 250 }],
-    Refurbished: [{ prefix: "Refurb ThinkPad T480", price: 15000 }, { prefix: "Refurb Dell 9020 i5", price: 9000 }, { prefix: "Refurb HP 24\" Monitor", price: 3500 }],
+    Refurbished: [{ prefix: "Refurb ThinkPad T480", price: 15000 }, { prefix: "Refurb Dell 9020 i5", price: 9000 }, { prefix: 'Refurb HP 24" Monitor', price: 3500 }],
   };
 
   let count = 0;
@@ -93,30 +97,26 @@ async function main() {
       const name = s.prefix;
       const sSlug = slug(`${s.prefix}-${i}-${leaf}`.slice(0, 60));
       const sku = `SKU-${slug(leaf).toUpperCase().slice(0, 6)}-${String(count + 1).padStart(4, "0")}`;
-      // Placeholder Cloudinary demo: replace with real upload via /admin
-      const demoImg = `https://res.cloudinary.com/demo/image/upload/f_auto,q_auto,w_600/sample`; // demo cloud, free
+      const demoImg = `https://res.cloudinary.com/demo/image/upload/f_auto,q_auto,w_600/sample`;
       await db.product.create({
         data: {
           name,
           slug: sSlug,
           sku,
-          description: `${name} — ${leaf}. Reliable, warranty included. Category: ${leaf}. Placeholder description for seed; edit in /admin.`,
+          description: `${name} — ${leaf}. Reliable, warranty included. Category: ${leaf}.`,
           price: s.price,
           compareAtPrice: Math.round(s.price * 1.15),
           stockQty: 10 + Math.floor(Math.random() * 20),
           lowStockThreshold: 5,
           isActive: true,
           categoryId: catId,
-          images: [demoImg, demoImg, demoImg], // Json array
+          images: [demoImg, demoImg, demoImg],
         },
       });
-      // Initial inventory log
-      // (we would create after product, but need productId — so fetch last created? Instead use create with connect after)
       count++;
     }
   }
 
-  // Create inventory logs for each product (INITIAL)
   const prods = await db.product.findMany({ select: { id: true, stockQty: true } });
   for (const p of prods) {
     await db.inventoryLog.create({
@@ -126,7 +126,48 @@ async function main() {
 
   console.log(`✅ Products seeded: ${count} (3/leaf)`);
   console.log(`✅ Inventory logs: ${prods.length}`);
-  console.log("🌱 Done — free tier usage: ~3MB DB, ~30MB Cloudinary (demo). Replace demo images via Cloudinary upload.");
+
+  // DEMO USERS for portfolio — password Yuyuneserx@1 (scrypt hash via @better-auth/utils)
+  const demoPassword = "Yuyuneserx@1";
+  const hash = await hashPassword(demoPassword);
+  const now = new Date();
+  const demos = [
+    { name: "Stone Admin", email: "admin@stoneandcircuit.test", role: "ADMIN" as const, phone: "09123456789" },
+    { name: "Stone Staff", email: "staff@stoneandcircuit.test", role: "STAFF" as const, phone: "09123456788" },
+    { name: "Demo Customer", email: "customer@demo.test", role: "CUSTOMER" as const, phone: "09123456780" },
+  ];
+
+  for (const d of demos) {
+    const userId = randomUUID();
+    await db.user.create({
+      data: {
+        id: userId,
+        name: d.name,
+        email: d.email.toLowerCase(),
+        emailVerified: true,
+        image: null,
+        role: d.role,
+        phone: d.phone,
+        createdAt: now,
+        updatedAt: now,
+      },
+    });
+    await db.account.create({
+      data: {
+        id: randomUUID(),
+        accountId: userId,
+        providerId: "credential",
+        issuer: "local:credential",
+        userId,
+        password: hash,
+        createdAt: now,
+        updatedAt: now,
+      },
+    });
+    console.log(`✅ Demo user: ${d.email} / ${demoPassword} (${d.role})`);
+  }
+
+  console.log("🌱 Done — portfolio ready: 45 products + 3 demo logins. Rotate demo password after showcase if needed.");
 }
 
 main()
