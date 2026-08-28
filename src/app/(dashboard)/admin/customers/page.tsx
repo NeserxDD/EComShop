@@ -5,12 +5,22 @@ import { Button } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
 
-export default async function CustomersPage() {
+export default async function CustomersPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ show?: string }>;
+}) {
   const session = await getSession();
   const currentId = (session?.user as { id?: string } | undefined)?.id;
+  const show = (await searchParams)?.show || "all";
+  let where: any = {};
+  if (show === "active") where = { OR: [{ banned: false }, { banned: null }] };
+  if (show === "banned") where = { banned: true };
+  // all = no filter
   let users: any[] = [];
   try {
     users = await db.user.findMany({
+      where,
       orderBy: { createdAt: "desc" },
       take: 50,
       select: { id: true, name: true, email: true, role: true, phone: true, banned: true, banReason: true, createdAt: true } as unknown as never,
@@ -26,6 +36,17 @@ export default async function CustomersPage() {
       <p className="text-xs font-mono uppercase tracking-wide text-muted-foreground">
         ADMIN can edit name/phone, set password (no old needed), promote, soft-delete (anonymize) or ban · self-delete blocked · demo: admin@stoneandcircuit.test / Yuyuneserx@1
       </p>
+      <div className="mt-2 flex gap-2 text-xs">
+        <a href="/admin/customers?show=all" className={`rounded-full border px-3 py-1 ${show === "all" || !show ? "bg-primary text-primary-foreground" : "border-border hover:bg-muted"}`}>
+          All
+        </a>
+        <a href="/admin/customers?show=active" className={`rounded-full border px-3 py-1 ${show === "active" ? "bg-primary text-primary-foreground" : "border-border hover:bg-muted"}`}>
+          Active
+        </a>
+        <a href="/admin/customers?show=banned" className={`rounded-full border px-3 py-1 ${show === "banned" ? "bg-primary text-primary-foreground" : "border-border hover:bg-muted"}`}>
+          Banned (soft deleted)
+        </a>
+      </div>
 
       <div className="mt-4 space-y-3">
         {users.map((u) => {
