@@ -23,12 +23,25 @@ export default async function ProductsPage({
   let products: any[] = [];
   let total = 0;
   let categories: any[] = [];
+  let subcategories: any[] = [];
 
   try {
     const where: Record<string, unknown> = { isActive: true };
     if (cat) {
       const c = await db.category.findFirst({ where: { slug: cat }, select: { id: true } });
-      if (c) (where as Record<string, string>).categoryId = c.id;
+      if (c) {
+        // Include children when cat is a parent (e.g., laptops → Gaming/Business)
+        const children = await db.category.findMany({ where: { parentId: c.id }, select: { id: true } });
+        const ids = [c.id, ...children.map((x: any) => x.id)];
+        (where as any).categoryId = { in: ids };
+        if (children.length > 0) {
+          subcategories = await db.category.findMany({
+            where: { parentId: c.id },
+            select: { id: true, name: true, slug: true },
+            orderBy: { name: "asc" },
+          });
+        }
+      }
     }
     if (q) {
       // free-tier simple search — case-insensitive contains on name/description
@@ -82,11 +95,11 @@ export default async function ProductsPage({
         </form>
       </div>
 
-      {/* Category chips */}
+      {/* Category chips — warm stone */}
       <div className="mt-4 flex flex-wrap gap-2">
         <Link
           href="/products"
-          className={`rounded-full border px-3 py-1 text-xs ${!cat ? "bg-black text-white dark:bg-white dark:text-black" : "hover:bg-zinc-50 dark:border-zinc-800"}`}
+          className={`rounded-full border px-3 py-1 text-xs ${!cat ? "bg-primary text-primary-foreground" : "border-border hover:bg-muted"}`}
         >
           All
         </Link>
@@ -94,12 +107,26 @@ export default async function ProductsPage({
           <Link
             key={c.id}
             href={`/products?cat=${c.slug}${q ? `&q=${q}` : ""}`}
-            className={`rounded-full border px-3 py-1 text-xs ${cat === c.slug ? "bg-black text-white" : "hover:bg-zinc-50 dark:border-zinc-800"}`}
+            className={`rounded-full border px-3 py-1 text-xs ${cat === c.slug ? "bg-primary text-primary-foreground" : "border-border hover:bg-muted"}`}
           >
             {c.name}
           </Link>
         ))}
       </div>
+      {subcategories.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          <span className="text-xs font-mono uppercase tracking-wide text-muted-foreground py-1">Filter:</span>
+          {subcategories.map((s: any) => (
+            <Link
+              key={s.id}
+              href={`/products?cat=${s.slug}${q ? `&q=${q}` : ""}`}
+              className="rounded-full border border-border bg-card px-3 py-1 text-xs hover:bg-muted"
+            >
+              {s.name}
+            </Link>
+          ))}
+        </div>
+      )}
 
       {products.length === 0 ? (
         <div className="mt-8 rounded-xl border border-border bg-card p-8 text-center shadow-sm">

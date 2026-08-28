@@ -8,6 +8,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 export default async function StorefrontLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
   const user = session?.user as { name?: string; role?: string } | undefined;
+  const isStaff = user && ["STAFF", "ADMIN"].includes(user.role || "");
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <header className="sticky top-0 z-10 border-b border-border bg-card/80 backdrop-blur supports-[backdrop-filter]:bg-card/80">
@@ -37,9 +38,24 @@ export default async function StorefrontLayout({ children }: { children: React.R
                   {l.label}
                 </Link>
               ))}
-              <Link href="/admin" className="px-3 py-1.5 rounded-full hover:bg-muted text-sm transition-colors">
-                Admin
-              </Link>
+              {isStaff && (
+                <Link
+                  href="/admin"
+                  className="px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-sm hover:bg-primary/90 transition-colors shadow-sm"
+                >
+                  Admin
+                </Link>
+              )}
+              {user && !isStaff && (
+                <>
+                  <Link href="/orders" className="px-3 py-1.5 rounded-full hover:bg-muted text-sm transition-colors">
+                    Orders
+                  </Link>
+                  <Link href="/repairs/my" className="px-3 py-1.5 rounded-full hover:bg-muted text-sm transition-colors">
+                    My Repairs
+                  </Link>
+                </>
+              )}
             </nav>
           </div>
           <div className="flex items-center gap-2">

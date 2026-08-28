@@ -30,8 +30,10 @@ export default function SignUpPage() {
 
   return (
     <div className="mx-auto max-w-md px-6 py-12">
-      <h1 className="text-2xl font-bold">Create account</h1>
-      <p className="text-sm text-zinc-500">Role defaults to CUSTOMER. ADMIN promotes via DB.</p>
+      <h1 className="text-2xl font-bold" style={{ fontFamily: "var(--font-inter)" }}>
+        Create account
+      </h1>
+      <p className="text-sm text-muted-foreground">Join Stone & Circuit — staff accounts are created by the owner. Need staff access? Contact us.</p>
       <form onSubmit={onSubmit} className="mt-6 space-y-4">
         <input
           placeholder="name"
