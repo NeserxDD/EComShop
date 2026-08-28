@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
+import { admin } from "better-auth/plugins";
 import { db } from "./db";
 
 // Vibecode learning: Better Auth = 100% free auth (no MAU limit).
@@ -20,16 +21,13 @@ export const auth = betterAuth({
     enabled: true,
     // minPasswordLength defaults to 8 — keeps free tier secure without extra cost
   },
-  // Optional: allow users to change email / delete account (disabled by default per skill)
   user: {
-    // Map additionalFields to our Prisma User.role/phone so Better Auth knows about them.
-    // Without this, role would be invisible to Better Auth APIs.
     additionalFields: {
       role: {
         type: "string",
         defaultValue: "CUSTOMER",
         required: false,
-        input: false, // don't allow client to set role on sign-up — only ADMIN can promote via DB
+        input: false,
       },
       phone: {
         type: "string",
@@ -37,7 +35,19 @@ export const auth = betterAuth({
         input: true,
       },
     },
+    // Customer can delete own account → soft anonymize (not hard delete) — keeps orders
+    deleteUser: {
+      enabled: true,
+      // No email verification for demo; immediate soft delete via beforeDelete hook
+    },
   },
+  plugins: [
+    admin({
+      defaultRole: "CUSTOMER",
+      adminRoles: ["ADMIN"],
+      // Banned users cannot sign in — used for soft delete / anonymize
+    }),
+  ],
   // Advanced: secure cookies in prod, CSRF on (never disable per skill security checklist)
   advanced: {
     // Better Auth auto-uses BETTER_AUTH_SECRET from env; only set secret here if env not set

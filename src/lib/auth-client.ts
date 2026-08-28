@@ -1,14 +1,13 @@
 "use client";
 import { createAuthClient } from "better-auth/react";
-
-// Vibecode learning: Client SDK for React.
-// - "use client" required — better-auth/react uses hooks (useSession).
-// - Base URL auto-detected from BETTER_AUTH_URL or window.location.
-// - Methods: signUp.email(), signIn.email(), signOut(), useSession().
-// - This file is imported only in Client Components (e.g., Header, sign-in form).
+import { adminClient } from "better-auth/client/plugins";
 
 export const authClient = createAuthClient({
   baseURL: process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "http://localhost:3000",
+  plugins: [adminClient()],
 });
 
 export const { signIn, signUp, signOut, useSession } = authClient;
+// Self-service: old password required for self (changePassword needs currentPassword)
+// Admin-on-others: no old password (admin.setUserPassword) via plugins/admin
+export const admin = authClient.admin;
