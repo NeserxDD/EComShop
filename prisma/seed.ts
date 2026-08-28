@@ -25,6 +25,10 @@ async function main() {
   await db.inventoryLog.deleteMany();
   await db.orderItem.deleteMany();
   await db.order.deleteMany();
+  // Variants must be deleted before products (CASCADE would handle, but explicit)
+  try {
+    await (db as any).productVariant.deleteMany();
+  } catch {}
   await db.product.deleteMany();
   await db.category.deleteMany();
   // Auth tables: Session/Account depend on User, Verification independent
@@ -85,47 +89,184 @@ async function main() {
     Refurbished: [{ prefix: "Refurb ThinkPad T480", price: 15000 }, { prefix: "Refurb Dell 9020 i5", price: 9000 }, { prefix: 'Refurb HP 24" Monitor', price: 3500 }],
   };
 
+  // Helper to create product with optional variants
+  async function createProductWithVariants(opts: {
+    name: string;
+    slug: string;
+    sku: string;
+    description: string;
+    price: number;
+    categoryId: string;
+    images: string[];
+    variants?: { label: string; sku: string; options: Record<string, string>; price: number; stockQty: number; image?: string }[];
+  }) {
+    const { variants, ...productData } = opts;
+    const demoCount = variants ? variants.length : 0;
+    // For parent with variants, price = min(variants), stock = sum
+    const parentPrice = variants && variants.length > 0 ? Math.min(...variants.map((v) => v.price)) : productData.price;
+    const parentStock = variants && variants.length > 0 ? variants.reduce((s, v) => s + v.stockQty, 0) : (productData as any).stockQty || 10;
+    const product = await db.product.create({
+      data: {
+        name: productData.name,
+        slug: productData.slug,
+        sku: productData.sku,
+        description: productData.description,
+        price: parentPrice,
+        compareAtPrice: Math.round(parentPrice * 1.15),
+        stockQty: parentStock,
+        lowStockThreshold: 5,
+        isActive: true,
+        categoryId: productData.categoryId,
+        images: productData.images,
+      },
+    });
+    if (variants && variants.length > 0) {
+      for (const v of variants) {
+        const variant = await (db as any).productVariant.create({
+          data: {
+            productId: product.id,
+            sku: v.sku,
+            label: v.label,
+            options: v.options,
+            price: v.price,
+            compareAtPrice: Math.round(v.price * 1.15),
+            stockQty: v.stockQty,
+            lowStockThreshold: 5,
+            image: v.image || productData.images[0],
+            isActive: true,
+          },
+        });
+        await db.inventoryLog.create({
+          data: { productId: product.id, variantId: variant.id, change: v.stockQty, reason: "INITIAL", note: `Seed variant ${v.label}` },
+        });
+      }
+      // No parent inventory log when has variants (stock sum already in variants)
+    } else {
+      await db.inventoryLog.create({
+        data: { productId: product.id, change: parentStock, reason: "INITIAL", note: "Seed initial stock" },
+      });
+    }
+    return product;
+  }
+
   let count = 0;
+  let variantCount = 0;
+  const demoImg = `https://res.cloudinary.com/demo/image/upload/f_auto,q_auto,w_600/sample`;
+
+  // Define which leaves/products get variants (per your approval: Storage Seagate, RAM Corsair, Laptop color)
+  const variantDefs: Record<string, { parentName: string; variants: { label: string; options: Record<string, string>; price: number }[] }[]> = {
+    Storage: [
+      {
+        parentName: "Seagate Barracuda HDD",
+        variants: [
+          { label: "250GB", options: { capacity: "250GB" }, price: 1200 },
+          { label: "500GB", options: { capacity: "500GB" }, price: 1800 },
+          { label: "1TB", options: { capacity: "1TB" }, price: 2500 },
+        ],
+      },
+    ],
+    RAM: [
+      {
+        parentName: "Corsair Vengeance DDR4",
+        variants: [
+          { label: "8GB", options: { capacity: "8GB" }, price: 1400 },
+          { label: "16GB", options: { capacity: "16GB" }, price: 2500 },
+          { label: "32GB", options: { capacity: "32GB" }, price: 4800 },
+        ],
+      },
+    ],
+    "Gaming Laptops": [
+      {
+        parentName: "ASUS ROG Strix G15",
+        variants: [
+          { label: "Silver", options: { color: "Silver" }, price: 65000 },
+          { label: "Black", options: { color: "Black" }, price: 65000 },
+          { label: "Eclipse Gray", options: { color: "Eclipse Gray" }, price: 67000 },
+        ],
+      },
+    ],
+  };
+
   for (const [leaf, catId] of leafMap.entries()) {
     const items = samples[leaf];
     if (!items) {
       console.warn(`No samples for leaf "${leaf}" — skipping`);
       continue;
     }
-    for (let i = 0; i < items.length; i++) {
-      const s = items[i];
-      const name = s.prefix;
-      const sSlug = slug(`${s.prefix}-${i}-${leaf}`.slice(0, 60));
-      const sku = `SKU-${slug(leaf).toUpperCase().slice(0, 6)}-${String(count + 1).padStart(4, "0")}`;
-      const demoImg = `https://res.cloudinary.com/demo/image/upload/f_auto,q_auto,w_600/sample`;
-      await db.product.create({
-        data: {
-          name,
+    // Check if this leaf has variant parents
+    const vParents = variantDefs[leaf];
+    if (vParents && vParents.length > 0) {
+      // Create variant parents + remaining singles to keep 3 parents per leaf
+      const usedParentNames = new Set(vParents.map((v) => v.parentName));
+      // First create variant parents
+      for (const vp of vParents) {
+        const sSlug = slug(`${vp.parentName}-${leaf}`.slice(0, 60));
+        const sku = `SKU-${slug(leaf).toUpperCase().slice(0, 6)}-${String(count + 1).padStart(4, "0")}`;
+        const variants = vp.variants.map((v, idx) => ({
+          label: v.label,
+          sku: `SKU-${slug(leaf).toUpperCase().slice(0, 6)}-${String(count + 1).padStart(4, "0")}-V${idx + 1}`,
+          options: v.options,
+          price: v.price,
+          stockQty: 8 + Math.floor(Math.random() * 12),
+        }));
+        await createProductWithVariants({
+          name: vp.parentName,
           slug: sSlug,
           sku,
-          description: `${name} — ${leaf}. Reliable, warranty included. Category: ${leaf}.`,
-          price: s.price,
-          compareAtPrice: Math.round(s.price * 1.15),
-          stockQty: 10 + Math.floor(Math.random() * 20),
-          lowStockThreshold: 5,
-          isActive: true,
+          description: `${vp.parentName} — ${leaf} with variants ${vp.variants.map((v) => v.label).join(", ")}.`,
+          price: 0, // will be min
           categoryId: catId,
           images: [demoImg, demoImg, demoImg],
-        },
-      });
-      count++;
+          variants,
+        });
+        count++;
+        variantCount += variants.length;
+      }
+      // Fill remaining slots to keep 3 parents per leaf (e.g., Storage already has Seagate parent, need 2 more singles)
+      const remaining = items.filter((it) => !usedParentNames.has(it.prefix) && !vParents.some((vp) => vp.parentName === it.prefix));
+      // For Storage, remaining are Samsung, WD (2) → need 2 singles to keep total 3 parents
+      // For RAM, remaining are G.Skill, Kingston (but we used Corsair as variant parent, so remaining 2 singles)
+      // For Gaming Laptops, remaining are Lenovo, Acer
+      const neededSingles = 3 - vParents.length;
+      for (let i = 0; i < Math.min(neededSingles, remaining.length); i++) {
+        const s = remaining[i];
+        const sSlug = slug(`${s.prefix}-${leaf}`.slice(0, 60));
+        const sku = `SKU-${slug(leaf).toUpperCase().slice(0, 6)}-${String(count + 1).padStart(4, "0")}`;
+        await createProductWithVariants({
+          name: s.prefix,
+          slug: sSlug,
+          sku,
+          description: `${s.prefix} — ${leaf}.`,
+          price: s.price,
+          categoryId: catId,
+          images: [demoImg, demoImg, demoImg],
+        });
+        count++;
+      }
+    } else {
+      // No variants for this leaf → 3 singles
+      for (let i = 0; i < items.length; i++) {
+        const s = items[i];
+        const sSlug = slug(`${s.prefix}-${i}-${leaf}`.slice(0, 60));
+        const sku = `SKU-${slug(leaf).toUpperCase().slice(0, 6)}-${String(count + 1).padStart(4, "0")}`;
+        await createProductWithVariants({
+          name: s.prefix,
+          slug: sSlug,
+          sku,
+          description: `${s.prefix} — ${leaf}.`,
+          price: s.price,
+          categoryId: catId,
+          images: [demoImg, demoImg, demoImg],
+        });
+        count++;
+      }
     }
   }
 
-  const prods = await db.product.findMany({ select: { id: true, stockQty: true } });
-  for (const p of prods) {
-    await db.inventoryLog.create({
-      data: { productId: p.id, change: p.stockQty, reason: "INITIAL", note: "Seed initial stock" },
-    });
-  }
-
-  console.log(`✅ Products seeded: ${count} (3/leaf)`);
-  console.log(`✅ Inventory logs: ${prods.length}`);
+  console.log(`✅ Products seeded: ${count} parents (3/leaf)`);
+  console.log(`✅ Variants seeded: ${variantCount} (Seagate 3 + Corsair 3 + ASUS 3)`);
+  const totalLogs = await db.inventoryLog.count();
+  console.log(`✅ Inventory logs: ${totalLogs}`);
 
   // DEMO USERS for portfolio — password Yuyuneserx@1 (scrypt hash via @better-auth/utils)
   const demoPassword = "Yuyuneserx@1";

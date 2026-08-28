@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 // - Zustand would be nicer but for MVP plain localStorage + event is enough.
 // - Server will validate stock again at checkout — never trust client stock.
 
-type CartItem = { productId: string; name: string; price: number; qty: number; slug: string; image?: string };
+type CartItem = { productId: string; variantId?: string | null; variantLabel?: string; name: string; price: number; qty: number; slug: string; image?: string };
 
 function readCart(): CartItem[] {
   if (typeof window === "undefined") return [];
@@ -21,15 +21,32 @@ function writeCart(cart: CartItem[]) {
   window.dispatchEvent(new Event("cart:updated"));
 }
 
-export function AddToCartButton({ product, stock }: { product: { id: string; name: string; price: number; slug: string; image?: string }; stock: number }) {
+export function AddToCartButton({
+  product,
+  stock,
+}: {
+  product: { id: string; name: string; price: number; slug: string; image?: string; variantId?: string | null; variantLabel?: string };
+  stock: number;
+}) {
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
 
   function add() {
     const cart = readCart();
-    const idx = cart.findIndex((c) => c.productId === product.id);
+    const key = `${product.id}::${product.variantId || ""}`;
+    const idx = cart.findIndex((c) => `${c.productId}::${c.variantId || ""}` === key);
     if (idx >= 0) cart[idx].qty += qty;
-    else cart.push({ productId: product.id, name: product.name, price: product.price, qty, slug: product.slug, image: product.image });
+    else
+      cart.push({
+        productId: product.id,
+        variantId: product.variantId || null,
+        variantLabel: product.variantLabel,
+        name: product.name,
+        price: product.price,
+        qty,
+        slug: product.slug,
+        image: product.image,
+      });
     writeCart(cart);
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);

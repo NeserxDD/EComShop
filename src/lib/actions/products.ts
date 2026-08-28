@@ -57,22 +57,67 @@ export async function createProduct(formData: FormData) {
 
   const slug = `${slugify(name)}-${Date.now().toString(36).slice(-4)}`;
 
-  const product = await db.product.create({
-    data: {
-      name,
-      slug,
-      sku,
-      price,
-      stockQty: isNaN(stockQty) ? 0 : stockQty,
-      categoryId,
-      description,
-      images,
-    },
-  });
+  // Variants: optional JSON array [{label, sku, price, stockQty, options:{capacity|color}, image?}]
+  const variantsRaw = String(formData.get("variants") || "[]");
+  let variants: { label: string; sku: string; price: number; stockQty: number; options?: Record<string, string>; image?: string }[] = [];
+  try {
+    const parsed = JSON.parse(variantsRaw);
+    if (Array.isArray(parsed) && parsed.length > 0) variants = parsed;
+  } catch {}
 
-  await db.inventoryLog.create({
-    data: { productId: product.id, change: product.stockQty, reason: "INITIAL", note: "Created via admin" },
-  });
+  if (variants.length > 0) {
+    // Parent with variants: price = min, stock = sum, validate each variant sku/price/stock
+    for (const v of variants) {
+      if (!v.label || !v.sku || !v.price) throw new Error("Variant missing label/sku/price");
+    }
+    const minPrice = Math.min(...variants.map((v) => Number(v.price)));
+    const sumStock = variants.reduce((s, v) => s + Number(v.stockQty || 0), 0);
+    const product = await db.product.create({
+      data: {
+        name,
+        slug,
+        sku,
+        description,
+        price: minPrice,
+        stockQty: sumStock,
+        categoryId,
+        images,
+      },
+    });
+    for (const v of variants) {
+      const variant = await (db as any).productVariant.create({
+        data: {
+          productId: product.id,
+          sku: v.sku,
+          label: v.label,
+          options: v.options || {},
+          price: Number(v.price),
+          stockQty: Number(v.stockQty || 0),
+          image: v.image || null,
+          isActive: true,
+        },
+      });
+      await db.inventoryLog.create({
+        data: { productId: product.id, variantId: variant.id, change: Number(v.stockQty || 0), reason: "INITIAL", note: `Variant ${v.label}` },
+      });
+    }
+  } else {
+    const product = await db.product.create({
+      data: {
+        name,
+        slug,
+        sku,
+        price,
+        stockQty: isNaN(stockQty) ? 0 : stockQty,
+        categoryId,
+        description,
+        images,
+      },
+    });
+    await db.inventoryLog.create({
+      data: { productId: product.id, change: product.stockQty, reason: "INITIAL", note: "Created via admin" },
+    });
+  }
 
   revalidatePath("/products");
   revalidatePath("/admin/products");

@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { checkoutCOD } from "@/lib/actions/cart";
 import { Button } from "@/components/ui/button";
 
-type CartItem = { productId: string; qty: number; price: number; name: string };
+type CartItem = { productId: string; variantId?: string | null; variantLabel?: string; qty: number; price: number; name: string };
 
 export default function CheckoutPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -35,8 +35,8 @@ export default function CheckoutPage() {
       </div>
     );
 
-  // Server Action reads these hidden fields
-  const cartJson = JSON.stringify(cart.map((c) => ({ productId: c.productId, qty: c.qty })));
+  // Server Action reads these hidden fields (variantId included)
+  const cartJson = JSON.stringify(cart.map((c) => ({ productId: c.productId, variantId: (c as any).variantId || null, qty: c.qty })));
   const shippingJson = JSON.stringify({ street, city, phone });
 
   return (

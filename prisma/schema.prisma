@@ -110,18 +110,18 @@ model Category {
 model Product {
   id                 String   @id @default(cuid())
   name               String
-  slug               String   @unique
-  sku                String   @unique
+  slug               String   @unique // parent canonical for search
+  sku                String   @unique // base SKU; variants have own SKU
   description        String   @db.Text
-  price              Decimal  @db.Decimal(10, 2)
+  price              Decimal  @db.Decimal(10, 2) // for no-variant products, or min(variants) for parents
   compareAtPrice     Decimal? @db.Decimal(10, 2)
-  stockQty           Int      @default(0)
+  stockQty           Int      @default(0) // for no-variant, or sum(variants) for parents
   lowStockThreshold  Int      @default(5)
   isActive           Boolean  @default(true)
-  // Cloudinary URLs JSON array
   images             Json     @default("[]")
   categoryId         String
   category           Category @relation(fields: [categoryId], references: [id])
+  variants           ProductVariant[]
   orderItems         OrderItem[]
   inventoryLogs      InventoryLog[]
   createdAt          DateTime @default(now())
@@ -131,6 +131,30 @@ model Product {
   @@index([isActive])
   @@index([slug])
   @@map("product")
+}
+
+model ProductVariant {
+  id                 String   @id @default(cuid())
+  productId          String
+  product            Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sku                String   @unique
+  label              String   // e.g., "250GB" or "Silver" — displayed
+  options            Json     @default("{}") // {"capacity":"250GB"} or {"color":"Silver"}
+  price              Decimal  @db.Decimal(10, 2)
+  compareAtPrice     Decimal? @db.Decimal(10, 2)
+  stockQty           Int      @default(0)
+  lowStockThreshold  Int      @default(5)
+  image              String?  // Cloudinary URL per variant
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  orderItems         OrderItem[]
+  inventoryLogs      InventoryLog[]
+
+  @@index([productId])
+  @@index([sku])
+  @@map("product_variant")
 }
 
 enum OrderStatus {
@@ -176,11 +200,14 @@ model OrderItem {
   order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   productId String
   product   Product @relation(fields: [productId], references: [id])
+  variantId String?
+  variant   ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
   qty       Int
   unitPrice Decimal @db.Decimal(10, 2)
 
   @@index([orderId])
   @@index([productId])
+  @@index([variantId])
   @@map("order_item")
 }
 
@@ -196,12 +223,15 @@ model InventoryLog {
   id        String          @id @default(cuid())
   productId String
   product   Product         @relation(fields: [productId], references: [id])
+  variantId String?
+  variant   ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
   change    Int             // negative for sale, positive for restock
   reason    InventoryReason
   note      String?
   createdAt DateTime        @default(now())
 
   @@index([productId])
+  @@index([variantId])
   @@index([createdAt])
   @@map("inventory_log")
 }
