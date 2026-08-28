@@ -1,0 +1,276 @@
+// EComShop — Prisma Schema for $0 Free Tier (Supabase Postgres + Better Auth + Cloudinary)
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// --- Better Auth required enums/models ---
+
+enum UserRole {
+  CUSTOMER
+  STAFF
+  ADMIN
+}
+
+model User {
+  id            String    @id
+  name          String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  phone         String?
+  role          UserRole  @default(CUSTOMER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  sessions Session[]
+  accounts Account[]
+
+  // Domain relations
+  orders      Order[]
+  repairJobs  RepairJob[] @relation("CustomerRepairs")
+  assignedRepairs RepairJob[] @relation("AssignedRepairs")
+  statusChanges   RepairStatusHistory[]
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?   @db.Text
+  refreshToken          String?   @db.Text
+  idToken               String?   @db.Text
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String   @db.Text
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
+
+  @@map("verification")
+}
+
+// --- E-commerce ---
+
+model Category {
+  id          String     @id @default(cuid())
+  name        String
+  slug        String     @unique
+  description String?
+  image       String?    // Cloudinary URL
+  parentId    String?
+  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryHierarchy")
+  products    Product[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([parentId])
+  @@index([slug])
+  @@map("category")
+}
+
+model Product {
+  id                 String   @id @default(cuid())
+  name               String
+  slug               String   @unique
+  sku                String   @unique
+  description        String   @db.Text
+  price              Decimal  @db.Decimal(10, 2)
+  compareAtPrice     Decimal? @db.Decimal(10, 2)
+  stockQty           Int      @default(0)
+  lowStockThreshold  Int      @default(5)
+  isActive           Boolean  @default(true)
+  // Cloudinary URLs JSON array
+  images             Json     @default("[]")
+  categoryId         String
+  category           Category @relation(fields: [categoryId], references: [id])
+  orderItems         OrderItem[]
+  inventoryLogs      InventoryLog[]
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([categoryId])
+  @@index([isActive])
+  @@index([slug])
+  @@map("product")
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+model Order {
+  id              String        @id @default(cuid())
+  orderNo         String        @unique // ECOM-2026-0001
+  userId          String
+  user            User          @relation(fields: [userId], references: [id])
+  status          OrderStatus   @default(PENDING)
+  paymentStatus   PaymentStatus @default(PENDING)
+  total           Decimal       @db.Decimal(10, 2)
+  // JSON: { street, city, zip, phone, notes }
+  shippingAddress Json
+  // JSON: { method: COD|STRIPE, stripeSessionId? }
+  paymentMeta     Json?         @default("{}")
+  items           OrderItem[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("order")
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  qty       Int
+  unitPrice Decimal @db.Decimal(10, 2)
+
+  @@index([orderId])
+  @@index([productId])
+  @@map("order_item")
+}
+
+enum InventoryReason {
+  SALE
+  REPAIR_USE
+  RESTOCK
+  ADJUSTMENT
+  INITIAL
+}
+
+model InventoryLog {
+  id        String          @id @default(cuid())
+  productId String
+  product   Product         @relation(fields: [productId], references: [id])
+  change    Int             // negative for sale, positive for restock
+  reason    InventoryReason
+  note      String?
+  createdAt DateTime        @default(now())
+
+  @@index([productId])
+  @@index([createdAt])
+  @@map("inventory_log")
+}
+
+// --- Repair Management ---
+
+enum RepairStatus {
+  RECEIVED
+  DIAGNOSING
+  WAITING_PARTS
+  REPAIRING
+  TESTING
+  READY
+  DELIVERED
+  CANCELLED
+}
+
+enum DeviceType {
+  LAPTOP
+  DESKTOP
+  COMPONENT
+  PERIPHERAL
+  MONITOR
+  NETWORK
+  ACCESSORY
+  OTHER
+}
+
+model RepairJob {
+  id               String              @id @default(cuid())
+  ticketNo         String              @unique // REP-2026-0001
+  customerId       String
+  customer         User                @relation("CustomerRepairs", fields: [customerId], references: [id])
+  assignedToId     String?
+  assignedTo       User?               @relation("AssignedRepairs", fields: [assignedToId], references: [id])
+  deviceType       DeviceType
+  brand            String?
+  model            String?
+  serialNo         String?
+  issueDescription String              @db.Text
+  // Cloudinary URLs
+  images           Json                @default("[]")
+  status           RepairStatus        @default(RECEIVED)
+  // JSON: [{ productId, qty }] parts consumed
+  partsUsed        Json                @default("[]")
+  estimatedCost    Decimal?            @db.Decimal(10, 2)
+  finalCost        Decimal?            @db.Decimal(10, 2)
+  notesInternal    String?             @db.Text
+  notesCustomer    String?             @db.Text
+  history          RepairStatusHistory[]
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  @@index([customerId])
+  @@index([assignedToId])
+  @@index([status])
+  @@index([ticketNo])
+  @@index([createdAt])
+  @@map("repair_job")
+}
+
+model RepairStatusHistory {
+  id          String       @id @default(cuid())
+  repairJobId String
+  repairJob   RepairJob    @relation(fields: [repairJobId], references: [id], onDelete: Cascade)
+  fromStatus  RepairStatus?
+  toStatus    RepairStatus
+  changedById String?
+  changedBy   User?        @relation(fields: [changedById], references: [id])
+  note        String?
+  createdAt   DateTime     @default(now())
+
+  @@index([repairJobId])
+  @@index([createdAt])
+  @@map("repair_status_history")
+}
