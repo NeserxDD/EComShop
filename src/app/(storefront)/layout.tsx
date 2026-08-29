@@ -50,9 +50,6 @@ export default async function StorefrontLayout({ children }: { children: React.R
               )}
               {user && (
                 <>
-                  <Link href="/account" className="px-3 py-1.5 rounded-full hover:bg-muted text-sm transition-colors">
-                    Account
-                  </Link>
                   {!isStaff && (
                     <>
                       <Link href="/orders" className="px-3 py-1.5 rounded-full hover:bg-muted text-sm transition-colors">
