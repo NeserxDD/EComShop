@@ -26,7 +26,21 @@ export async function checkoutCOD(formData: FormData) {
   }
   if (!cart.length) throw new Error("Cart empty");
 
-  const shipping = JSON.parse(shippingRaw || "{}") as { street?: string; city?: string; phone?: string };
+  const shipping = JSON.parse(shippingRaw || "{}") as {
+    street?: string;
+    barangay?: string;
+    city?: string;
+    province?: string;
+    region?: string;
+    zip?: string;
+    country?: string;
+    phone?: string;
+  };
+  // Validate full PH address per Baymard/web.dev: street, city, province, region, zip, phone required; barangay optional
+  if (!shipping.street || !shipping.city || !shipping.province || !shipping.region || !shipping.zip || !shipping.phone) {
+    throw new Error("Missing address: street, barangay, city, province, region, zip, phone required");
+  }
+  const saveAddress = formData.get("saveAddress") === "true" || formData.get("saveAddress") === "on";
 
   // Fetch products + variants with lock-friendly short transaction
   const productIds = [...new Set(cart.map((c) => c.productId))];
@@ -123,6 +137,32 @@ export async function checkoutCOD(formData: FormData) {
 
     return created;
   });
+
+  // Optionally save address to book (Home/Work) for next checkout
+  if (saveAddress) {
+    try {
+      const existing = await db.address.findFirst({ where: { userId, street: shipping.street!, city: shipping.city!, province: shipping.province! } });
+      if (!existing) {
+        const count = await db.address.count({ where: { userId } });
+        await db.address.create({
+          data: {
+            userId,
+            label: count === 0 ? "Home" : "Work",
+            street: shipping.street!,
+            barangay: shipping.barangay || null,
+            city: shipping.city!,
+            province: shipping.province!,
+            region: shipping.region!,
+            zip: shipping.zip!,
+            country: shipping.country || "PH",
+            isDefault: count === 0,
+          },
+        });
+      }
+    } catch (e) {
+      console.error("Save address failed", e);
+    }
+  }
 
   redirect(`/orders/${order.id}?success=1`);
 }

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getSession } from "@/lib/session";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SignOutButton } from "@/components/sign-out-button";
+import { CartIcon } from "@/components/cart-icon";
 
 // Warm stone + amber — anthropics frontend-design (thesis hero) + shadcn + vercel web-guidelines
 // Header: sticky hairline (stone-200) 1px, 90% bg + backdrop-blur, micro mono labels, not plain.
@@ -60,6 +61,7 @@ export default async function StorefrontLayout({ children }: { children: React.R
             </nav>
           </div>
           <div className="flex items-center gap-2">
+            <CartIcon />
             <ThemeToggle />
             {user ? (
               <>

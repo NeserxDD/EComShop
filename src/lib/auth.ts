@@ -35,10 +35,19 @@ export const auth = betterAuth({
         input: true,
       },
     },
-    // Customer can delete own account → soft anonymize (not hard delete) — keeps orders
+    changeEmail: {
+      enabled: true, // verify new email via Resend, FYI old via not yet — standard new-only
+    },
     deleteUser: {
       enabled: true,
-      // No email verification for demo; immediate soft delete via beforeDelete hook
+    },
+  },
+  emailVerification: {
+    sendOnSignUp: false,
+    autoSignInAfterVerification: true,
+    sendVerificationEmail: async ({ user, url }) => {
+      // For portfolio demo, log instead of requiring real Resend domain verification
+      console.log(`[BetterAuth] Verification email to ${user.email}: ${url}`);
     },
   },
   plugins: [

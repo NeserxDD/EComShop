@@ -32,6 +32,7 @@ model User {
 
   sessions Session[]
   accounts Account[]
+  addresses Address[]
 
   // Domain relations
   orders      Order[]
@@ -40,6 +41,26 @@ model User {
   statusChanges   RepairStatusHistory[]
 
   @@map("user")
+}
+
+model Address {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label     String   // Home, Work
+  street    String
+  barangay  String?
+  city      String
+  province  String
+  region    String
+  zip       String
+  country   String   @default("PH")
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("address")
 }
 
 model Session {
