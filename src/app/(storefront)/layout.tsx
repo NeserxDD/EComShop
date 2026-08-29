@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { getSession } from "@/lib/session";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { SignOutButton } from "@/components/sign-out-button";
 import { CartIcon } from "@/components/cart-icon";
+import { ProfileDropdown } from "@/components/profile-dropdown";
 
 // Warm stone + amber — anthropics frontend-design (thesis hero) + shadcn + vercel web-guidelines
 // Header: sticky hairline (stone-200) 1px, 90% bg + backdrop-blur, micro mono labels, not plain.
@@ -81,12 +81,7 @@ export default async function StorefrontLayout({ children }: { children: React.R
             <CartIcon />
             <ThemeToggle />
             {user ? (
-              <>
-                <span className="hidden lg:inline text-xs font-mono uppercase tracking-wide text-muted-foreground">
-                  {user.name} · {user.role}
-                </span>
-                <SignOutButton />
-              </>
+              <ProfileDropdown user={user as any} />
             ) : (
               <>
                 <Link href="/sign-in" className="hidden sm:inline text-sm hover:underline px-2">
