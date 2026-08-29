@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
 
-const allStatuses = ["RECEIVED", "DIAGNOSING", "WAITING_PARTS", "REPAIRING", "TESTING", "READY", "DELIVERED", "CANCELLED"] as const;
+const allStatuses = ["PENDING", "RECEIVED", "DIAGNOSING", "WAITING_PARTS", "REPAIRING", "TESTING", "READY", "DELIVERED", "CANCELLED"] as const;
 
 export default async function AdminRepairsPage() {
   let jobs: any[] = [];
@@ -28,7 +28,7 @@ export default async function AdminRepairsPage() {
         Repair Jobs — {jobs.length}
       </h1>
       <p className="text-xs font-mono uppercase tracking-wide text-muted-foreground">
-        Stone warm · State machine · Assign + parts tracked
+        Face-to-face Manila: PENDING (online request) → RECEIVED (staff confirms drop-off) → DIAGNOSING… · Parts optional, linked to shop ProductVariant (REPAIR_USE) if entered
       </p>
 
       <div className="mt-4 space-y-3">

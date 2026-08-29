@@ -13,6 +13,7 @@ import { RepairStatusEmail } from "@/emails/repair-status";
 // - Keep transactions short per supabase-postgres-best-practices lock-short-transactions.
 
 const transitions: Record<string, string[]> = {
+  PENDING: ["RECEIVED", "CANCELLED"],
   RECEIVED: ["DIAGNOSING", "CANCELLED"],
   DIAGNOSING: ["WAITING_PARTS", "REPAIRING", "CANCELLED"],
   WAITING_PARTS: ["REPAIRING", "CANCELLED"],
@@ -58,13 +59,13 @@ export async function createRepair(formData: FormData) {
       serialNo,
       issueDescription,
       images,
-      status: "RECEIVED",
+      status: "PENDING",
       estimatedCost: estimatedCost ?? undefined,
     },
   });
 
   await db.repairStatusHistory.create({
-    data: { repairJobId: job.id, fromStatus: null, toStatus: "RECEIVED", changedById: userId, note: "Created via storefront" },
+    data: { repairJobId: job.id, fromStatus: null, toStatus: "PENDING", changedById: userId, note: "Awaiting drop-off at Manila showroom" },
   });
 
   revalidatePath("/repairs/track");
@@ -107,6 +108,20 @@ export async function updateRepairStatus(formData: FormData) {
     if (!allowed.includes(toStatus)) throw new Error(`Invalid transition ${job.status} → ${toStatus}. Allowed: ${allowed.join(", ") || "none"}`);
   }
 
+  // Handle parts inventory (optional): if partsUsed is array of {productId, variantId?, qty}, decrement stock
+  let partsForInventory: { productId: string; variantId?: string | null; qty: number }[] = [];
+  if (Array.isArray(partsUsed)) {
+    for (const p of partsUsed as any[]) {
+      if (p && typeof p === "object" && p.productId) {
+        partsForInventory.push({ productId: String(p.productId), variantId: p.variantId ? String(p.variantId) : null, qty: Number(p.qty) || 1 });
+      } else if (typeof p === "string" && p.includes("::")) {
+        // Format "productId::variantId::qty" from dropdown
+        const [productId, variantId, qtyStr] = p.split("::");
+        if (productId) partsForInventory.push({ productId, variantId: variantId || null, qty: Number(qtyStr) || 1 });
+      }
+    }
+  }
+
   await db.$transaction(async (tx) => {
     await tx.repairJob.update({
       where: { id },
@@ -121,6 +136,27 @@ export async function updateRepairStatus(formData: FormData) {
       await tx.repairStatusHistory.create({
         data: { repairJobId: id, fromStatus: job.status as any, toStatus: toStatus as any, changedById: userId || undefined, note },
       });
+    }
+    // Decrement inventory for each part used (optional, only if linked to ProductVariant/Product)
+    for (const part of partsForInventory) {
+      if (part.variantId) {
+        const v: any = await (tx as any).productVariant.findUnique({ where: { id: part.variantId }, select: { stockQty: true } });
+        if (v && v.stockQty >= part.qty) {
+          await (tx as any).productVariant.update({ where: { id: part.variantId }, data: { stockQty: { decrement: part.qty } } });
+          await tx.product.update({ where: { id: part.productId }, data: { stockQty: { decrement: part.qty } } });
+          await tx.inventoryLog.create({
+            data: { productId: part.productId, variantId: part.variantId, change: -part.qty, reason: "REPAIR_USE", note: `Repair ${job.ticketNo} used ${part.qty}× ${part.variantId}` },
+          });
+        }
+      } else {
+        const prod: any = await tx.product.findUnique({ where: { id: part.productId }, select: { stockQty: true } });
+        if (prod && prod.stockQty >= part.qty) {
+          await tx.product.update({ where: { id: part.productId }, data: { stockQty: { decrement: part.qty } } });
+          await tx.inventoryLog.create({
+            data: { productId: part.productId, change: -part.qty, reason: "REPAIR_USE", note: `Repair ${job.ticketNo}` },
+          });
+        }
+      }
     }
   });
 

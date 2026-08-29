@@ -9,10 +9,12 @@ import { Button } from "@/components/ui/button";
 export default function NewRepairPage() {
   return (
     <div className="mx-auto max-w-2xl px-6 py-8">
-      <h1 className="text-2xl font-bold">Request Repair</h1>
-      <p className="text-sm text-zinc-500">Free tier: stores ticket in Supabase (1 row ~1KB). Images on Cloudinary. You’ll get ticketNo like REP-2026-ABC123.</p>
+      <h1 className="text-2xl font-bold" style={{ fontFamily: "var(--font-inter)" }}>
+        Request Repair — Stone & Circuit
+      </h1>
+      <p className="text-sm text-muted-foreground">Submit online → bring device + ticket to Manila showroom (Mon–Sat 9am–6pm, check-in until 5pm). You’ll get ticketNo like REP-2026-ABC123. Status starts as PENDING until staff confirms Received.</p>
 
-      <form action={createRepair} className="mt-6 space-y-4 rounded-2xl border p-6 dark:border-zinc-800">
+      <form action={createRepair} className="mt-6 space-y-4 rounded-xl border border-border bg-card p-6 shadow-sm">
         <div className="grid grid-cols-2 gap-3">
           <select name="deviceType" required className="rounded-xl border px-3 py-2.5 text-sm dark:border-zinc-800 dark:bg-zinc-900">
             <option value="LAPTOP">Laptop</option>

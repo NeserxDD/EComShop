@@ -239,6 +239,7 @@ model InventoryLog {
 // --- Repair Management ---
 
 enum RepairStatus {
+  PENDING
   RECEIVED
   DIAGNOSING
   WAITING_PARTS
@@ -274,7 +275,7 @@ model RepairJob {
   issueDescription String              @db.Text
   // Cloudinary URLs
   images           Json                @default("[]")
-  status           RepairStatus        @default(RECEIVED)
+  status           RepairStatus        @default(PENDING)
   // JSON: [{ productId, qty }] parts consumed
   partsUsed        Json                @default("[]")
   estimatedCost    Decimal?            @db.Decimal(10, 2)

@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
-const steps: string[] = ["RECEIVED", "DIAGNOSING", "WAITING_PARTS", "REPAIRING", "TESTING", "READY", "DELIVERED"];
+const steps: string[] = ["PENDING", "RECEIVED", "DIAGNOSING", "WAITING_PARTS", "REPAIRING", "TESTING", "READY", "DELIVERED"];
 
 export default async function TrackPage({ searchParams }: { searchParams: Promise<{ ticket?: string; created?: string }> }) {
   const { ticket, created } = await searchParams;
