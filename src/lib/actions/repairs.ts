@@ -1,8 +1,11 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/session";
+import { resend } from "@/lib/resend";
+import { RepairStatusEmail } from "@/emails/repair-status";
 
 // Vibecode learning: Repair state machine — never allow arbitrary jumps.
 // - Valid transitions map ensures data integrity (e.g., can't go READY → RECEIVED).
@@ -91,7 +94,10 @@ export async function updateRepairStatus(formData: FormData) {
     }
   }
 
-  const job = await db.repairJob.findUnique({ where: { id }, select: { status: true } });
+  const job = await db.repairJob.findUnique({
+    where: { id },
+    select: { status: true, ticketNo: true, customerId: true, brand: true, model: true, deviceType: true },
+  });
   if (!job) throw new Error("Repair not found");
 
   // Allow updating assign/parts without status change; if status same, skip transition check
@@ -118,10 +124,35 @@ export async function updateRepairStatus(formData: FormData) {
     }
   });
 
-  // Non-blocking email would go here via Resend + after() per vercel-react-best-practices server-after-nonblocking
-  // e.g., after(() => sendEmail(job.customerEmail, `Repair ${ticketNo} → ${toStatus}`))
+  // Resend A: admin → customer (no Gmail needed, To = customer.email like customer@demo.test, From = onboarding@resend.dev)
+  if (isStatusChange && resend) {
+    const customer = await db.user.findUnique({ where: { id: job.customerId }, select: { email: true, name: true } });
+    if (customer?.email) {
+      const device = `${job.deviceType} ${job.brand || ""} ${job.model || ""}`.trim();
+      const toSend = resend;
+      after(async () => {
+        try {
+          await toSend.emails.send({
+            from: "Stone & Circuit <onboarding@resend.dev>",
+            to: customer.email,
+            subject: `Repair ${job.ticketNo} → ${toStatus}`,
+            react: RepairStatusEmail({
+              ticketNo: job.ticketNo,
+              customerName: customer.name || "Customer",
+              device: device || "Device",
+              oldStatus: job.status,
+              newStatus: toStatus,
+              note,
+            }) as any,
+          });
+        } catch (e) {
+          console.error("Resend repair status failed", e);
+        }
+      });
+    }
+  }
 
   revalidatePath("/repairs/track");
   revalidatePath("/admin/repairs");
-  revalidatePath(`/repairs/track?ticket=${id}`);
+  revalidatePath(`/repairs/track?ticket=${job.ticketNo}`);
 }
