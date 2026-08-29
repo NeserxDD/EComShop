@@ -44,11 +44,13 @@ export default function CheckoutPage() {
       <h1 className="text-2xl font-bold">Checkout — COD</h1>
       <p className="text-sm text-zinc-500">Pay on delivery. Order will be PENDING, stock decremented server-side.</p>
 
-      <div className="mt-6 rounded-2xl border p-4 text-sm dark:border-zinc-800">
-        <p className="font-medium">Order summary: {cart.length} items • Total placeholder {total}</p>
+      <div className="mt-6 rounded-xl border border-border bg-card p-4 text-sm shadow-sm">
+        <p className="font-medium" style={{ fontFamily: "var(--font-inter)" }}>
+          Order summary: {cart.length} items · Total {total}
+        </p>
       </div>
 
-      <form action={checkoutCOD} className="mt-6 space-y-4">
+      <form action={checkoutCOD} className="mt-6 space-y-4 rounded-xl border border-border bg-card p-4 shadow-sm">
         <input type="hidden" name="cart" value={cartJson} />
         <input type="hidden" name="shippingAddress" value={shippingJson} />
         <input
@@ -56,21 +58,21 @@ export default function CheckoutPage() {
           value={street}
           onChange={(e) => setStreet(e.target.value)}
           required
-          className="w-full rounded-xl border px-4 py-2.5 text-sm dark:border-zinc-800 dark:bg-zinc-900"
+          className="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground"
         />
         <input
           placeholder="City"
           value={city}
           onChange={(e) => setCity(e.target.value)}
           required
-          className="w-full rounded-xl border px-4 py-2.5 text-sm dark:border-zinc-800 dark:bg-zinc-900"
+          className="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground"
         />
         <input
           placeholder="Phone"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
           required
-          className="w-full rounded-xl border px-4 py-2.5 text-sm dark:border-zinc-800 dark:bg-zinc-900"
+          className="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground"
         />
         <Button type="submit" className="w-full">
           Place Order (COD) — no Stripe yet

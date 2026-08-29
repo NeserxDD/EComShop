@@ -32,53 +32,58 @@ export default async function TrackPage({ searchParams }: { searchParams: Promis
       )}
 
       <form className="mt-6 flex gap-2">
-        <input name="ticket" defaultValue={ticket} placeholder="Enter ticketNo e.g., REP-2026-ABC123" className="flex-1 rounded-xl border px-4 py-2.5 text-sm dark:border-zinc-800 dark:bg-zinc-900" />
-        <button className="rounded-full bg-black px-6 py-2.5 text-sm text-white dark:bg-white dark:text-black">Track</button>
+        <input name="ticket" defaultValue={ticket} placeholder="Enter ticketNo e.g., REP-2026-ABC123" className="flex-1 rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground" />
+        <button className="rounded-xl bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 shadow-sm">Track</button>
       </form>
 
-      {!ticket && <p className="mt-4 text-sm text-zinc-500">Enter ticketNo above. No login needed for tracking — but creation requires sign-in.</p>}
+      {!ticket && <p className="mt-4 text-sm text-muted-foreground">Enter ticketNo above. No login needed for tracking — but creation requires sign-in.</p>}
 
       {ticket && !job && <p className="mt-4 text-sm text-red-600">No repair found for ticket {ticket}. Check spelling or request at /repairs/new.</p>}
 
       {job && (
         <div className="mt-6 space-y-4">
-          <div className="rounded-2xl border p-4 dark:border-zinc-800">
-            <p className="font-mono text-xs">{job.ticketNo}</p>
-            <p className="text-sm font-medium">
+          <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+            <p className="font-mono text-xs text-muted-foreground">{job.ticketNo}</p>
+            <p className="text-sm font-medium" style={{ fontFamily: "var(--font-inter)" }}>
               {job.deviceType} {job.brand} {job.model} — {job.status}
             </p>
-            <p className="text-xs text-zinc-500">
+            <p className="text-xs text-muted-foreground">
               {job.customer?.name} • {new Date(job.createdAt).toLocaleString()}
             </p>
-            <p className="text-sm mt-2">Issue: {job.issueDescription}</p>
+            <p className="text-sm mt-2 text-foreground">Issue: {job.issueDescription}</p>
             {job.finalCost != null && <p className="text-sm font-semibold mt-1">Final cost: {String(job.finalCost)}</p>}
           </div>
 
-          {/* Timeline */}
-          <div className="rounded-2xl border p-4 dark:border-zinc-800">
-            <p className="text-sm font-medium">Status Timeline</p>
+          {/* Timeline — warm amber, not black */}
+          <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+            <p className="text-sm font-medium" style={{ fontFamily: "var(--font-inter)" }}>
+              Status Timeline
+            </p>
             <div className="mt-3 flex flex-wrap gap-2">
               {steps.map((s) => {
                 const reached = steps.indexOf(s) <= steps.indexOf(job.status);
                 const isCurrent = s === job.status;
                 return (
-                  <span key={s} className={`rounded-full border px-2 py-1 text-xs ${isCurrent ? "bg-black text-white dark:bg-white dark:text-black" : reached ? "bg-zinc-100 dark:bg-zinc-800" : "text-zinc-400 border-dashed"}`}>
+                  <span
+                    key={s}
+                    className={`rounded-full border px-2 py-1 text-xs ${isCurrent ? "bg-primary text-primary-foreground border-primary" : reached ? "bg-muted text-muted-foreground border-border" : "text-muted-foreground border-dashed border-border"}`}
+                  >
                     {s}
                   </span>
                 );
               })}
-              {job.status === "CANCELLED" && <span className="rounded-full bg-red-600 px-2 py-1 text-xs text-white">CANCELLED</span>}
+              {job.status === "CANCELLED" && <span className="rounded-full bg-destructive px-2 py-1 text-xs text-destructive-foreground">CANCELLED</span>}
             </div>
             <div className="mt-4 space-y-2">
               {history.map((h) => (
-                <div key={h.id} className="flex justify-between text-xs border-t pt-2 dark:border-zinc-800">
-                  <span>
-                    {h.fromStatus || "—"} → <strong>{h.toStatus}</strong> {h.note ? `• ${h.note}` : ""}
+                <div key={h.id} className="flex justify-between text-xs border-t border-border pt-2">
+                  <span className="text-foreground">
+                    {h.fromStatus || "—"} → <strong>{h.toStatus}</strong> {h.note ? `· ${h.note}` : ""}
                   </span>
-                  <span className="text-zinc-500">{new Date(h.createdAt).toLocaleString()}</span>
+                  <span className="text-muted-foreground">{new Date(h.createdAt).toLocaleString()}</span>
                 </div>
               ))}
-              {history.length === 0 && <p className="text-xs text-zinc-500">No history yet.</p>}
+              {history.length === 0 && <p className="text-xs text-muted-foreground">No history yet.</p>}
             </div>
           </div>
 

@@ -34,13 +34,13 @@ export default function SignUpPage() {
         Create account
       </h1>
       <p className="text-sm text-muted-foreground">Join Stone & Circuit — staff accounts are created by the owner. Need staff access? Contact us.</p>
-      <form onSubmit={onSubmit} className="mt-6 space-y-4">
+      <form onSubmit={onSubmit} className="mt-6 space-y-4 rounded-xl border border-border bg-card p-4 shadow-sm">
         <input
           placeholder="name"
           required
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="w-full rounded-xl border px-4 py-2.5 text-sm dark:border-zinc-800 dark:bg-zinc-900"
+          className="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground"
         />
         <input
           placeholder="email"
@@ -48,13 +48,13 @@ export default function SignUpPage() {
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full rounded-xl border px-4 py-2.5 text-sm dark:border-zinc-800 dark:bg-zinc-900"
+          className="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground"
         />
         <input
           placeholder="phone (optional)"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
-          className="w-full rounded-xl border px-4 py-2.5 text-sm dark:border-zinc-800 dark:bg-zinc-900"
+          className="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground"
         />
         <input
           placeholder="password (min 8)"
@@ -62,7 +62,7 @@ export default function SignUpPage() {
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full rounded-xl border px-4 py-2.5 text-sm dark:border-zinc-800 dark:bg-zinc-900"
+          className="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground"
         />
         {error && <p className="text-sm text-red-600">{error}</p>}
         <Button disabled={loading} className="w-full">

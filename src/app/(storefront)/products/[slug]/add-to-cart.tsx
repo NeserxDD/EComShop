@@ -56,12 +56,12 @@ export function AddToCartButton({
 
   return (
     <div className="flex items-center gap-3">
-      <div className="flex items-center rounded-full border dark:border-zinc-800">
-        <button onClick={() => setQty((q) => Math.max(1, q - 1))} className="px-3 py-2 text-sm">
+      <div className="flex items-center rounded-xl border border-border bg-card">
+        <button onClick={() => setQty((q) => Math.max(1, q - 1))} className="px-3 py-2 text-sm hover:bg-muted rounded-l-xl">
           −
         </button>
         <span className="min-w-8 text-center text-sm">{qty}</span>
-        <button onClick={() => setQty((q) => Math.min(stock, q + 1))} className="px-3 py-2 text-sm">
+        <button onClick={() => setQty((q) => Math.min(stock, q + 1))} className="px-3 py-2 text-sm hover:bg-muted rounded-r-xl">
           +
         </button>
       </div>

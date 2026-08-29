@@ -51,16 +51,18 @@ export default function SignInPage() {
 
   return (
     <div className="mx-auto max-w-md px-6 py-12">
-      <h1 className="text-2xl font-bold">Sign in</h1>
-      <p className="text-sm text-zinc-500">Better Auth + Prisma (free, unlimited users)</p>
-      <form onSubmit={onSubmit} className="mt-6 space-y-4">
+      <h1 className="text-2xl font-bold" style={{ fontFamily: "var(--font-inter)" }}>
+        Sign in — Stone & Circuit
+      </h1>
+      <p className="text-sm text-muted-foreground">Warm stone — Manila showroom · Mon–Sat 9am–6pm</p>
+      <form onSubmit={onSubmit} className="mt-6 space-y-4 rounded-xl border border-border bg-card p-4 shadow-sm">
         <input
           placeholder="email"
           type="email"
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full rounded-xl border px-4 py-2.5 text-sm dark:border-zinc-800 dark:bg-zinc-900"
+          className="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground"
         />
         <input
           placeholder="password"
@@ -68,7 +70,7 @@ export default function SignInPage() {
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full rounded-xl border px-4 py-2.5 text-sm dark:border-zinc-800 dark:bg-zinc-900"
+          className="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground"
         />
         {error && <p className="text-sm text-red-600">{error}</p>}
         <Button disabled={loading} className="w-full">

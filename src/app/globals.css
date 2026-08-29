@@ -5,27 +5,28 @@
    Tokens swap via .dark class (not prefers-color-scheme alone) for user toggle, 500ms crossfade per skill. */
 
 :root {
-  /* Stone warm ramp — light */
-  --background: #fafaf9; /* stone-50 warm white */
-  --foreground: #1c1917; /* stone-900 warm black */
+  /* Stone warm ramp — light — warmed #fafaf9 → #fdfcf8 for W1, input now card white */
+  --background: #fdfcf8; /* was #fafaf9 */
+  --foreground: #1c1917;
   --card: #ffffff;
   --card-foreground: #1c1917;
   --popover: #ffffff;
   --popover-foreground: #1c1917;
-  --primary: #d97706; /* amber-600 warm accent — one per view */
-  --primary-foreground: #fffbeb; /* amber-50 */
-  --secondary: #f5f5f4; /* stone-100 */
-  --secondary-foreground: #44403c; /* stone-700 */
-  --muted: #f5f5f4;
-  --muted-foreground: #78716c; /* stone-500 */
-  --accent: #fef3c7; /* amber-100 subtle */
+  --primary: #d97706;
+  --primary-foreground: #fffbeb;
+  --secondary: #f7f5f3; /* was #f5f5f4 */
+  --secondary-foreground: #44403c;
+  --muted: #f7f5f3;
+  --muted-foreground: #78716c;
+  --accent: #fef3c7;
   --accent-foreground: #92400e;
   --destructive: #dc2626;
   --destructive-foreground: #fef2f2;
-  --border: #e7e5e4; /* stone-200 hairline 1px per skill */
-  --input: #e7e5e4;
-  --ring: #d97706; /* focus ring = accent */
-  --radius: 0.75rem; /* 12px base — skill ladder 16/12/8/6 */
+  --border: #e8e6e1; /* was #e7e5e4 */
+  --input: #ffffff; /* was #e7e5e4 — now card white so inputs are cards, not hairlines */
+  --ring: #d97706;
+  --ring-offset-background: #fdfcf8;
+  --radius: 0.75rem;
 }
 
 .dark {
@@ -80,7 +81,20 @@
   --radius-xl: calc(var(--radius) + 4px); /* 16px large cards */
 }
 
-/* Base */
+/* Base — inputs are cards, not transparent */
+@layer base {
+  input,
+  select,
+  textarea {
+    background-color: var(--card);
+    border-color: var(--border);
+    color: var(--foreground);
+  }
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--muted-foreground);
+  }
+}
 * {
   border-color: var(--border);
 }

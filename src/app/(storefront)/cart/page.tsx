@@ -46,9 +46,11 @@ export default function CartPage() {
   if (cart.length === 0)
     return (
       <div className="mx-auto max-w-2xl px-6 py-12 text-center">
-        <h1 className="text-2xl font-bold">Cart empty</h1>
-        <p className="text-sm text-zinc-500">Add some products from /products</p>
-        <Link href="/products" className="mt-4 inline-block rounded-full bg-black px-6 py-2 text-sm text-white dark:bg-white dark:text-black">
+        <h1 className="text-2xl font-bold" style={{ fontFamily: "var(--font-inter)" }}>
+          Cart empty
+        </h1>
+        <p className="text-sm text-muted-foreground">Add some products from /products</p>
+        <Link href="/products" className="mt-4 inline-block rounded-xl bg-primary px-6 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 shadow-sm">
           Browse
         </Link>
       </div>
@@ -86,13 +88,13 @@ export default function CartPage() {
           </div>
         ))}
       </div>
-      <div className="mt-6 flex items-center justify-between rounded-2xl bg-zinc-50 p-4 dark:bg-zinc-900">
+      <div className="mt-6 flex items-center justify-between rounded-xl border border-border bg-card p-4 shadow-sm">
         <span className="font-semibold">Total: {formatPrice(total)}</span>
-        <Link href="/checkout" className="rounded-full bg-black px-6 py-2 text-sm text-white dark:bg-white dark:text-black">
+        <Link href="/checkout" className="rounded-xl bg-primary px-6 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 shadow-sm">
           Checkout (COD)
         </Link>
       </div>
-      <p className="mt-3 text-xs text-zinc-500">Checkout validates stock server-side + creates Order + InventoryLog in one transaction.</p>
+      <p className="mt-3 text-xs text-muted-foreground">Checkout validates stock server-side + creates Order + InventoryLog in one transaction.</p>
     </div>
   );
 }
