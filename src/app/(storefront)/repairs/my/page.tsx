@@ -29,7 +29,7 @@ export default async function MyRepairsPage() {
       <p className="text-sm text-muted-foreground">Your tickets. Click to track.</p>
       <div className="mt-4 space-y-3">
         {jobs.map((j) => (
-          <Link key={j.id} href={`/repairs/track?ticket=${j.ticketNo}`} className="block rounded-xl border border-border bg-card p-4 shadow-sm hover:bg-muted transition-colors">
+          <Link key={j.id} href={`/repairs/track?ticket=${j.ticketNo}`} className="block rounded-xl border border-border bg-card p-4 shadow-sm hover:bg-secondary hover:border-primary/20 hover:shadow-md transition-all">
             <div className="flex justify-between">
               <span className="font-mono text-xs text-muted-foreground">{j.ticketNo}</span>
               <span className="rounded-full border border-border bg-card px-2 py-0.5 text-xs">{j.status}</span>

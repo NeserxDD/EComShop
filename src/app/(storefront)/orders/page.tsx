@@ -29,7 +29,7 @@ export default async function OrdersPage() {
       </h1>
       <div className="mt-4 space-y-3">
         {orders.map((o) => (
-          <Link key={o.id} href={`/orders/${o.id}`} className="block rounded-xl border border-border bg-card p-4 shadow-sm hover:bg-muted transition-colors">
+          <Link key={o.id} href={`/orders/${o.id}`} className="block rounded-xl border border-border bg-card p-4 shadow-sm hover:bg-secondary hover:border-primary/20 hover:shadow-md transition-all">
             <div className="flex justify-between">
               <span className="font-mono text-xs text-muted-foreground">{o.orderNo}</span>
               <span className="text-xs rounded-full border border-border bg-card px-2 py-0.5">{o.status}</span>

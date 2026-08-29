@@ -48,14 +48,31 @@ export default async function StorefrontLayout({ children }: { children: React.R
                   Admin
                 </Link>
               )}
-              {user && !isStaff && (
+              {user && (
                 <>
-                  <Link href="/orders" className="px-3 py-1.5 rounded-full hover:bg-muted text-sm transition-colors">
-                    Orders
+                  <Link href="/account" className="px-3 py-1.5 rounded-full hover:bg-muted text-sm transition-colors">
+                    Account
                   </Link>
-                  <Link href="/repairs/my" className="px-3 py-1.5 rounded-full hover:bg-muted text-sm transition-colors">
-                    My Repairs
-                  </Link>
+                  {!isStaff && (
+                    <>
+                      <Link href="/orders" className="px-3 py-1.5 rounded-full hover:bg-muted text-sm transition-colors">
+                        Orders
+                      </Link>
+                      <Link href="/repairs/my" className="px-3 py-1.5 rounded-full hover:bg-muted text-sm transition-colors">
+                        My Repairs
+                      </Link>
+                    </>
+                  )}
+                  {isStaff && (
+                    <>
+                      <Link href="/orders" className="hidden lg:inline px-3 py-1.5 rounded-full hover:bg-muted text-sm transition-colors">
+                        Orders
+                      </Link>
+                      <Link href="/repairs/my" className="hidden lg:inline px-3 py-1.5 rounded-full hover:bg-muted text-sm transition-colors">
+                        My Repairs
+                      </Link>
+                    </>
+                  )}
                 </>
               )}
             </nav>
