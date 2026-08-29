@@ -25,11 +25,26 @@ export default function SignInPage() {
     const res = await authClient.signIn.email(
       { email, password },
       {
-        onSuccess: () => router.push(next),
+        onSuccess: async () => {
+          router.refresh();
+          // Role-aware redirect: ADMIN/STAFF → /admin (portfolio clear), CUSTOMER → next or /
+          try {
+            const s = await authClient.getSession();
+            const role = (s?.data?.user as any)?.role;
+            if (role === "ADMIN" || role === "STAFF") {
+              router.push(next !== "/" ? next : "/admin");
+            } else {
+              router.push(next);
+            }
+            router.refresh();
+          } catch {
+            router.push(next);
+            router.refresh();
+          }
+        },
         onError: (ctx) => setError(ctx.error.message),
       }
     );
-    // fallback if callback not fired
     if (res?.error) setError(res.error.message || "Failed");
     setLoading(false);
   }
