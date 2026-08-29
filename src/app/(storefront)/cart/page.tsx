@@ -41,6 +41,11 @@ export default function CartPage() {
     localStorage.setItem("ecom_cart", JSON.stringify(next));
     setCart(next);
   }
+  function clearAll() {
+    localStorage.removeItem("ecom_cart");
+    setCart([]);
+    window.dispatchEvent(new Event("cart:updated"));
+  }
   const total = cart.reduce((s, c) => s + c.price * c.qty, 0);
 
   if (cart.length === 0)
@@ -90,11 +95,18 @@ export default function CartPage() {
       </div>
       <div className="mt-6 flex items-center justify-between rounded-xl border border-border bg-card p-4 shadow-sm">
         <span className="font-semibold">Total: {formatPrice(total)}</span>
-        <Link href="/checkout" className="rounded-xl bg-primary px-6 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 shadow-sm">
-          Checkout (COD)
-        </Link>
+        <div className="flex gap-2">
+          <button onClick={clearAll} className="rounded-xl border border-border bg-card px-4 py-2 text-sm hover:bg-muted">
+            Clear cart
+          </button>
+          <Link href="/checkout" className="rounded-xl bg-primary px-6 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 shadow-sm">
+            Checkout (COD)
+          </Link>
+        </div>
       </div>
-      <p className="mt-3 text-xs text-muted-foreground">Checkout validates stock server-side + creates Order + InventoryLog in one transaction.</p>
+      <p className="mt-3 text-xs text-muted-foreground">
+        Checkout validates stock server-side + creates Order + InventoryLog in one transaction. If you see “no longer available” after an update, click Clear cart and re-add.
+      </p>
     </div>
   );
 }

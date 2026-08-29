@@ -59,19 +59,32 @@ export async function checkoutCOD(formData: FormData) {
   const pMap = new Map(products.map((p) => [p.id, p]));
   const vMap = new Map(variants.map((v: any) => [v.id, v]));
   let total = 0;
+  const stale: string[] = [];
   for (const item of cart) {
     if (item.variantId) {
       const v: any = vMap.get(item.variantId);
-      if (!v) throw new Error(`Variant not found: ${item.variantId}`);
+      if (!v) {
+        stale.push(item.variantId);
+        continue;
+      }
       if (v.stockQty < item.qty) throw new Error(`Insufficient stock for variant ${v.label}: ${v.stockQty} left`);
       total += Number(v.price) * item.qty;
     } else {
       const p = pMap.get(item.productId);
-      if (!p) throw new Error(`Product not found: ${item.productId}`);
+      if (!p) {
+        stale.push(item.productId);
+        continue;
+      }
       if (p.stockQty < item.qty) throw new Error(`Insufficient stock for ${p.name}: ${p.stockQty} left`);
       total += Number(p.price) * item.qty;
     }
   }
+  if (stale.length > 0) {
+    throw new Error(
+      `Some products in your cart are no longer available (maybe the store updated). Please clear your cart and add them again. Stale IDs: ${stale.slice(0, 3).join(", ")}`
+    );
+  }
+  if (total === 0) throw new Error("Cart empty or all items unavailable — please add products again.");
 
   const orderNo = `ECOM-${new Date().getFullYear()}-${Date.now().toString(36).toUpperCase().slice(-6)}`;
 
