@@ -158,32 +158,3 @@ export async function toggleProductActive(formData: FormData) {
   revalidatePath("/products");
   revalidatePath("/admin/products");
 }
-
-export async function updateVariantStock(formData: FormData) {
-  const session = await getSession();
-  const role = (session?.user as { role?: string } | undefined)?.role;
-  if (!role || !["STAFF", "ADMIN"].includes(role)) throw new Error("Forbidden");
-  const variantId = String(formData.get("variantId") || "");
-  const delta = parseInt(String(formData.get("delta") || "0"), 10);
-  const reason = (String(formData.get("reason") || "ADJUSTMENT") as "RESTOCK" | "ADJUSTMENT") || "ADJUSTMENT";
-  if (!variantId || isNaN(delta)) throw new Error("Missing variantId/delta");
-  const variant: any = await (db as any).productVariant.findUnique({ where: { id: variantId }, select: { productId: true, stockQty: true, label: true } });
-  if (!variant) throw new Error("Variant not found");
-  const updated: any = await (db as any).productVariant.update({ where: { id: variantId }, data: { stockQty: { increment: delta } } });
-  await db.product.update({ where: { id: variant.productId }, data: { stockQty: { increment: delta } } });
-  await db.inventoryLog.create({ data: { productId: variant.productId, variantId, change: delta, reason: reason as any, note: `Variant ${variant.label} ${delta > 0 ? "restock" : "adjustment"} by ${role}` } });
-  revalidatePath("/admin/products");
-  revalidatePath("/admin/inventory");
-}
-
-export async function toggleVariantActive(formData: FormData) {
-  const session = await getSession();
-  const role = (session?.user as { role?: string } | undefined)?.role;
-  assertAdmin(role);
-  const variantId = String(formData.get("variantId") || "");
-  const current: any = await (db as any).productVariant.findUnique({ where: { id: variantId }, select: { isActive: true } });
-  if (!current) throw new Error("Variant not found");
-  await (db as any).productVariant.update({ where: { id: variantId }, data: { isActive: !current.isActive } });
-  revalidatePath("/admin/products");
-  revalidatePath("/products");
-}
