@@ -1,22 +1,19 @@
-// Stripe stub — $0 free tier ready, disabled until you add keys.
-// - No monthly fee; test mode is free forever.
-// - When ready: set STRIPE_SECRET_KEY, NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY, STRIPE_WEBHOOK_SECRET in Vercel env.
-// - Then: `npm i stripe @stripe/stripe-js` already pending? Install now or later.
-// - Uses Checkout Sessions per stripe-best-practices:40 (never payment_method_types, use dynamic methods).
+import Stripe from "stripe";
 
-// import Stripe from "stripe";
+// Stone & Circuit — Stripe Checkout Sessions (additive to COD)
+// - PHP currency per your call, Checkout Sessions per stripe-best-practices:40 (never payment_method_types, use automatic)
+// - Test mode free forever: pk_test / sk_test 4242 4242 4242 4242, live only when you set sk_live
+// - COD stays at src/lib/actions/cart.ts:1 checkoutCOD, Stripe is second button
 
-// export const stripe = process.env.STRIPE_SECRET_KEY
-//   ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2025-08-26.basil" as unknown as Stripe.LatestApiVersion })
-//   : null;
+export const stripe = process.env.STRIPE_SECRET_KEY
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2025-08-26.basil" as any })
+  : null;
 
-// // Vibecode learning: Checkout Sessions are the $0-way to accept cards without building custom PaymentIntents.
-// // Flow: create session → redirect → webhook checkout.session.completed → fulfill order.
-// // Keep COD flow intact; Stripe is additive, not replacement.
+export function isStripeConfigured() {
+  return !!process.env.STRIPE_SECRET_KEY && !!stripe;
+}
 
-export const stripe = null as unknown;
-
-// Placeholder for when you wire Stripe later:
-export async function createCheckoutSessionStub() {
-  throw new Error("Stripe not configured — set STRIPE_SECRET_KEY in .env and uncomment src/lib/stripe.ts");
+// For client redirect (optional, Sessions uses hosted URL, not PaymentElement)
+export async function getStripePublishableKey() {
+  return process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || null;
 }

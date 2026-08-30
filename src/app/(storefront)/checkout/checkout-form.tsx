@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { checkoutCOD } from "@/lib/actions/cart";
+import { createStripeCheckout } from "@/lib/actions/stripe";
 import { Button } from "@/components/ui/button";
 
 type CartItem = { productId: string; variantId?: string | null; variantLabel?: string; qty: number; price: number; name: string };
@@ -108,9 +109,15 @@ export function CheckoutForm({ addresses }: { addresses: Addr[] }) {
         <label className="flex items-center gap-2 text-xs">
           <input type="checkbox" name="saveAddress" value="true" /> Save this address to My Account (Home/Work)
         </label>
-        <Button type="submit" className="w-full">
-          Place Order (COD)
-        </Button>
+        <div className="grid gap-2">
+          <Button type="submit" className="w-full">
+            Place Order (COD) — Cash on Delivery
+          </Button>
+          <Button type="submit" formAction={createStripeCheckout} variant="outline" className="w-full border-primary text-primary hover:bg-primary/10">
+            Pay with Card — Stripe Checkout (PHP) →
+          </Button>
+          <p className="text-xs text-center text-muted-foreground">Stripe test: 4242 4242 4242 4242 — needs STRIPE_SECRET_KEY in .env.local (currently shows “Stripe not configured” until you set it at dashboard.stripe.com/test)</p>
+        </div>
       </form>
       <p className="mt-3 text-xs text-muted-foreground">Server validates street/city/province/region/zip/phone + variant stock atomically. Sign-in required. Full PH address per Baymard/web.dev: address-line1 + address-line2 (Barangay optional) + city + province/region + postal-code, autocomplete + inputmode.</p>
     </div>
